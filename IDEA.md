@@ -40,7 +40,7 @@ maintainer_email: git-admin@casjaysdev.pro
 - NNTP server (plain + TLS) — full RFC 3977 / RFC 4642 compliance; full command set including all mandatory RFC 3977 commands: `CAPABILITIES`, `HELP`, `QUIT`, `ARTICLE`, `HEAD`, `BODY`, `STAT`, `GROUP`, `LISTGROUP`, `LAST`, `NEXT`, `POST`, `IHAVE`, `OVER`, `HDR`, `LIST`, `NEWNEWS`, `NEWGROUPS`, `MODE READER`, `DATE`, `STARTTLS`; RFC 4644 streaming extension (`STREAMING`, `CHECK`, `TAKETHIS`); RFC 2980 legacy aliases `XOVER`, `XHDR`, and `XPAT` served alongside their RFC 3977 canonical equivalents for backward compatibility with older clients (Thunderbird, slrn, tin)
 - NNTP-to-email fanout: every newsgroup post is delivered to email subscribers
 - Email-to-NNTP injection: inbound list email is stored as a newsgroup article
-- Single canonical article store — article body on filesystem (hash-sharded by `Message-ID`); headers, metadata, and threading data in SQLite
+- Single canonical article store — article body on filesystem (hash-sharded by `Message-ID`); headers, metadata, and threading data in the database
 - Live Message-ID deduplication: server maintains a running history of every ingested `Message-ID`; inbound NNTP POST, inbound email inject, and all peer feed paths reject already-seen IDs before storing; prevents feed loops, duplicate delivery to subscribers, and duplicate articles in the archive; history is persistent across restarts
 - Mailing-list subscriber management: join, leave, digest vs. real-time, held messages
 - Mailman-style web interface: subscriber self-service (public routes) + full admin panel (at `/server/{admin_path}/`)
@@ -48,7 +48,7 @@ maintainer_email: git-admin@casjaysdev.pro
 - Moderation: post approval queue (web + email-based approve/reject), moderator promotion/demotion, rejection with reason; per-origin trust bypass — known subscribers posting via authenticated NNTP or from a whitelisted address skip the hold queue even on moderated groups; unknown/unauthenticated senders always held; emergency moderation flag forces all posts to queue regardless of trust
 - Cross-posting: article appears in all target groups, duplicate delivery suppressed per-subscriber
 - Threading: `References` and `In-Reply-To` headers honoured and propagated from both inbound paths
-- NNTP operating mode: configurable at server level — `reader` (serve NNTP clients only, no peer feeds), `feeder` (peer feed exchange only, no direct client reading), `both` (default, all connections); controlled via `nntp.mode` in YAML
+- NNTP operating mode: configurable at server level — `reader` (serve NNTP clients only, no peer feeds), `feeder` (peer feed exchange only, no direct client reading), `both` (default, all connections)
 - Usenet peering: active feed (IHAVE/TAKETHIS push, RFC 4644 streaming) + passive pull (NEWNEWS-based); per-peer group filter uses INN-compatible wildmat pattern syntax (e.g. `comp.*,!comp.binaries.*`) for fine-grained feed control
 - Control message handling: `newgroup`, `rmgroup`, and `checkgroups` control messages arriving via peer feeds are logged and held for admin review; never auto-applied regardless of source; PGP-signed control messages still require explicit admin approval before taking effect; admins can approve, reject, or ignore each held control message from the admin UI
 - Batched feed injection: `gospool inject` subcommand (part of the server binary) accepts RFC 4155 `rnews` batch files for UUCP/batched-feed operators; same Message-ID dedup and age-cutoff rules apply as live feeds
@@ -91,7 +91,7 @@ maintainer_email: git-admin@casjaysdev.pro
 - NNTP `DATE` command (RFC 3977 §7.1): returns current server time in UTC for client clock sync
 - NNTP `AUTHINFO USER/PASS` (RFC 4643 legacy): supported in addition to SASL; TLS required before accepting plaintext credentials; maps to the same credential store as SASL
 - Per-peer flood control: configurable inbound article rate limit per peer connection (articles/minute + bytes/minute); excess triggers a temporary hold and peer notification; protects against runaway feeders without dropping the connection
-- SASL auth on NNTP listener: `PLAIN` (TLS-only) + `SCRAM-SHA-256`; see PART 11
+- SASL auth on NNTP listener: `PLAIN` (TLS-only) + `SCRAM-SHA-256`
 - Built-in spam engine: Bayesian classifier trained implicitly by moderator approve/reject actions; SPF/DKIM/DMARC inbound scoring; RBL DNS blacklist checks (default: Spamhaus ZEN + SORBS, configurable); configurable header/body scoring rules; per-group score thresholds — below = deliver, above = hold, high = reject
 - Built-in AV: hash-based detection against ClamAV `.hdb` signature databases; scheduler refreshes databases daily (same pattern as GeoIP); catches all known malware hashes on attachments without a daemon
 - Milter hook interface for operators who want full rspamd/ClamAV daemon integration instead of or in addition to built-in engines
@@ -192,7 +192,7 @@ YAML config file (see PART 5). Configurable areas:
 - **Spam engine**: RBL server list, per-group score thresholds, enable flags
 - **AV engine**: signature database path, update URL, enable flag
 - **Env var overrides**: all runtime config values can be overridden via environment variables without editing YAML — see PART 5 for the full runtime and init-only variable table; `SMTP_*` vars (HOST, PORT, USERNAME, PASSWORD, FROM_NAME, FROM_EMAIL, TLS) override the outbound relay settings
-- **Database**: SQLite only (v1); path configurable — see PART 10 for idempotent schema-on-startup approach; PostgreSQL is explicitly out of scope for v1
+- **Database**: SQLite (single-node default) or PostgreSQL (cluster) — see PART 10 for engine selection, idempotent schema-on-startup approach, and driver aliases; gospool-specific additions: article body store path alongside the DB path; article metadata tables follow the same `CREATE/ALTER TABLE IF NOT EXISTS` pattern
 - **Backup / restore**: `gospool --maintenance backup [filename]` — see PART 22 for format (`.tar.gz[.enc]`), manifest, encryption, and restore procedure; gospool-specific additions to backup contents: article store directory and DKIM key blobs
 - **Config hot-reload**: SIGHUP is ignored (per PART 8); config file is watched automatically and hot-reloaded on change; settings that cannot reload without a restart set a `pending_restart` flag visible in the admin dashboard (see PART 13)
 - **Security headers, CSP, HSTS, rate limiting**: see PART 11 (mandatory all projects)
@@ -201,6 +201,7 @@ YAML config file (see PART 5). Configurable areas:
 - **Internationalisation**: all human-readable strings (web, admin panel, CLI, emails) are translatable — see PART 31; server-default language: English; supports EN, ES, ZH, FR, AR, DE, JA
 - **Service files**: systemd unit, OpenRC init script — see PART 25; generated / installed by `gospool --service install`
 - **robots.txt and sitemap**: served at `/robots.txt`; private group paths and archive routes for private groups disallowed for unauthenticated crawlers — see PART 16
+- **Prometheus metrics**: mandatory `/metrics` endpoint in Prometheus exposition format — see PART 21; gospool-specific gauges: articles total, delivery queue depth, peer connection count, bounce rate 24h, spam hold rate
 
 ### Roles & permissions
 
