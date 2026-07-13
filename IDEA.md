@@ -37,10 +37,11 @@ maintainer_email: git-admin@casjaysdev.pro
 ### Product scope & non-goals
 
 **In scope:**
-- NNTP server (plain + TLS) — full RFC 3977 / RFC 4642 compliance; full command set: `ARTICLE`, `HEAD`, `BODY`, `STAT`, `GROUP`, `LISTGROUP`, `LAST`, `NEXT`, `POST`, `IHAVE`, `OVER`, `HDR`, `LIST`, `NEWNEWS`, `NEWGROUPS`, `MODE READER`, `QUIT`, `STARTTLS`; RFC 4644 streaming extension (`STREAMING`, `CHECK`, `TAKETHIS`)
+- NNTP server (plain + TLS) — full RFC 3977 / RFC 4642 compliance; full command set including all mandatory RFC 3977 commands: `CAPABILITIES`, `HELP`, `QUIT`, `ARTICLE`, `HEAD`, `BODY`, `STAT`, `GROUP`, `LISTGROUP`, `LAST`, `NEXT`, `POST`, `IHAVE`, `OVER`, `HDR`, `LIST`, `NEWNEWS`, `NEWGROUPS`, `MODE READER`, `DATE`, `STARTTLS`; RFC 4644 streaming extension (`STREAMING`, `CHECK`, `TAKETHIS`); RFC 2980 legacy aliases `XOVER`, `XHDR`, and `XPAT` served alongside their RFC 3977 canonical equivalents for backward compatibility with older clients (Thunderbird, slrn, tin)
 - NNTP-to-email fanout: every newsgroup post is delivered to email subscribers
 - Email-to-NNTP injection: inbound list email is stored as a newsgroup article
 - Single canonical article store — article body on filesystem (hash-sharded by `Message-ID`); headers, metadata, and threading data in SQLite
+- Live Message-ID deduplication: server maintains a running history of every ingested `Message-ID`; inbound NNTP POST, inbound email inject, and all peer feed paths reject already-seen IDs before storing; prevents feed loops, duplicate delivery to subscribers, and duplicate articles in the archive; history is persistent across restarts
 - Mailing-list subscriber management: join, leave, digest vs. real-time, held messages
 - Mailman-style web interface: subscriber self-service (public routes) + full admin panel (at `/server/{admin_path}/`)
 - Email-command interface for subscription management (`SUBSCRIBE`, `UNSUBSCRIBE`, `DIGEST`, `HELP`) with confirmation token flow
@@ -48,9 +49,11 @@ maintainer_email: git-admin@casjaysdev.pro
 - Cross-posting: article appears in all target groups, duplicate delivery suppressed per-subscriber
 - Threading: `References` and `In-Reply-To` headers honoured and propagated from both inbound paths
 - NNTP operating mode: configurable at server level — `reader` (serve NNTP clients only, no peer feeds), `feeder` (peer feed exchange only, no direct client reading), `both` (default, all connections); controlled via `nntp.mode` in YAML
-- Usenet peering: active feed (IHAVE/TAKETHIS push, RFC 4644 streaming) + passive pull (NEWNEWS-based); peer-initiated group creation requires explicit admin approval (no PGP control message chain)
+- Usenet peering: active feed (IHAVE/TAKETHIS push, RFC 4644 streaming) + passive pull (NEWNEWS-based); per-peer group filter uses INN-compatible wildmat pattern syntax (e.g. `comp.*,!comp.binaries.*`) for fine-grained feed control
+- Control message handling: `newgroup`, `rmgroup`, and `checkgroups` control messages arriving via peer feeds are logged and held for admin review; never auto-applied regardless of source; PGP-signed control messages still require explicit admin approval before taking effect; admins can approve, reject, or ignore each held control message from the admin UI
+- Batched feed injection: `gospool inject` subcommand (part of the server binary) accepts RFC 4155 `rnews` batch files for UUCP/batched-feed operators; same Message-ID dedup and age-cutoff rules apply as live feeds
 - Group lifecycle: create/delete/rename via admin UI, CLI, and API; high/low water marks tracked for NNTP `LIST ACTIVE` compliance
-- Per-group configuration: public/private, moderated/unmoderated, announcement-only, peering on/off, reply-to rewriting, message header/footer, retention days, posting policy
+- Per-group configuration: public/private, moderated/unmoderated, announcement-only, peering on/off, reply-to mode, message header/footer, retention days, posting policy, default delivery mode for new subscribers
 - Article expiry: per-group retention rules; scheduled expiry job purges expired articles from DB and FS
 - Cancel / Supersedes: handled on inbound from both NNTP and peer feeds; restricted to original sender or group moderator
 - Cancel-Lock (RFC 8315): server generates a Cancel-Lock header on all locally-posted articles; cancel and supersedes requests validated against the lock before applying; prevents forged cancels from peers or unauthenticated senders
@@ -60,9 +63,10 @@ maintainer_email: git-admin@casjaysdev.pro
 - Article age cutoff: configurable max age for accepting articles from peer feeds; articles older than the cutoff rejected silently; prevents stale-article floods from misbehaving peers
 - Feed filtering hooks: pre-ingest pipe hook (external process) for spam/virus scanning; replaces INN filter_innd with a clean modern interface
 - Tag-based topic filtering: admin defines tags per group; subscribers opt in to specific tags via preferences UI — delivery filtered to matching articles only; replaces Mailman topics with a simpler checkbox model
-- Subscriber delivery modes: `realtime`, `digest`, `nomail` (stay subscribed, receive nothing — reads via NNTP), `announcement` (receive only moderator/admin posts)
+- Subscriber delivery modes: `realtime`, `digest`, `nomail` (stay subscribed, receive nothing — reads via NNTP), `announcement` (receive only moderator/admin posts); per-group configurable default for new subscribers (default: `realtime`)
 - Announcement-only list type: per-group flag; non-admin posts auto-rejected with configurable response
 - Per-list message header/footer: plain text appended/prepended to every outbound email per group; configurable in admin UI
+- Reply-to munging: per-group, three modes — `none` (do not alter Reply-To), `list` (replace or add Reply-To with list posting address), `first_strip` (strip any existing Reply-To, then set list posting address); default `list`
 - DMARC mitigation: detect strict DMARC domains on inbound `From:`; munge to `display name via list@domain` format to prevent rejection
 - Ban list: block specific addresses at group or server level; banned sender posts silently discarded or bounced (configurable)
 - Double opt-in: confirmation token emailed on subscribe; address not activated until confirmed
@@ -74,8 +78,11 @@ maintainer_email: git-admin@casjaysdev.pro
 - Digest delivery: MIME `multipart/digest` (RFC 2046); per-group configurable window (daily default, weekly option, threshold-based trigger)
 - Inbound email addressed via `list+groupname@domain` subaddressing (single MX record)
 - Per-group Atom/RSS feed for public groups (read-only, no auth)
+- Private groups suppressed from unauthenticated listing: private groups do not appear in NNTP `LIST ACTIVE` responses for unauthenticated connections, the public web group index, or the public Atom/RSS group list; they are only visible to authenticated subscribers and admins
+- Member roster visibility: per-group configurable; default `private` — only moderators and admins can view the member list; `members` option allows subscribed members to see each other; unauthenticated users never see any roster
 - Public read-only web archive for public groups (Pipermail-style, no auth)
 - Private group archive: members-only web archive for private groups; requires login; non-members see the group info page but not article content
+- Archive address obfuscation: in web archive HTML, email addresses in headers are obfuscated by replacing `@` with ` at ` (or a configurable pattern); per-group toggle; default on for all groups to reduce address harvesting by crawlers
 - Per-group info page: public landing page for each group showing description, posting address, subscribe/unsubscribe form, link to archive, moderator contact, and recent activity count; serves as the canonical URL for the group
 - Prometheus metrics endpoint: peers connected, articles/sec in/out, delivery queue depth, bounce rate
 - Companion CLI binary (`gospool-cli`): group management, subscriber management, moderation queue, peer config, article inspection
@@ -98,15 +105,18 @@ maintainer_email: git-admin@casjaysdev.pro
 - Rejection notification to sender: when a held post is rejected by a moderator, the original sender receives an email with the rejection reason; configurable per group (enabled by default)
 - Subscription request comment: when joining a moderated-membership group, subscriber can include a plain-text reason; moderator sees the comment when approving or rejecting the membership request
 - Non-member posting policy: per-group, four options — `hold` (send to moderation queue), `reject` (bounce with reason to sender), `discard` (silent drop, no notification), `accept` (non-members may post freely without moderation); default is `hold`
+- Per-sender non-member override lists: per-group address/glob lists that override the blanket non-member policy for specific senders — `hold_senders`, `accept_senders`, `reject_senders`, `discard_senders`; matched in that order; supports exact addresses and shell-style glob patterns (e.g. `*@trusted-org.example`)
+- Per-group header/content filter rules: ordered list of regex rules per group, each matching any header field (Subject, From, X-Mailer, body excerpt, etc.) with a configured action — `hold`, `reject`, or `discard`; rules evaluated before the non-member policy; allows blocking spam patterns, off-topic subjects, or abusive senders without banning them server-wide
+- Max To/Cc recipients: configurable global and per-group limit on the total number of addresses in `To:` + `Cc:` headers on inbound messages; articles exceeding the limit rejected with an explanation to prevent exploder-style relay abuse
 - Periodic membership reminder: configurable scheduled email to all subscribers listing their active subscriptions with unsubscribe instructions; default interval monthly; can be disabled per group or server-wide
 - Password reset flow: "Forgot password" link on login page; token emailed to registered address; token valid for 1 hour; entire flow disabled and link hidden when no outbound email path is configured — follows PART 18 SMTP rules
 - Email address change: authenticated user can request a new email address; confirmation token sent to the new address; change does not take effect until confirmed; old address notified as a security alert
 - Group moderator web interface: focused web queue view for group moderators — shows held articles with approve/reject controls, sender history, and spam score; no access to server admin or org management; accessible via the same web server under `/groups/{name}/queue/`; also reachable via signed token in moderator hold notification emails
-- Webhooks: admin-configurable HTTP callbacks for server events; per-event subscription — new article posted, article held for moderation, article approved/rejected, subscriber joined/left, peer connection state change, TLS cert renewed/expiring; payload is a signed JSON envelope; delivery retried on failure with exponential backoff; webhook log viewable in admin UI
+- Webhooks: admin-configurable HTTP callbacks for server events; per-event subscription — new article posted, article held for moderation, article approved/rejected, subscriber joined/left, peer connection state change, TLS cert renewed/expiring; payload is a signed JSON envelope; delivery retried on failure with exponential backoff; webhook log viewable in admin UI; webhook target URLs validated at save-time and delivery-time — private, loopback, and link-local address ranges (RFC 1918, 127.0.0.0/8, 169.254.0.0/16) rejected by default to prevent SSRF; override configurable for self-hosted setups where internal webhooks are intentional
 - Audit log: append-only log of admin and moderation actions — group create/delete/config change, subscriber add/remove/suspend, moderator assignment change, peer add/remove, user account change, server config change; stored in DB; queryable by actor, resource type, and date range via admin UI and API; never purged automatically
 - Admin email alerts: server admin receives email notifications for operational events — moderation queue depth exceeds threshold, per-group bounce rate exceeds threshold, TLS cert expiring within N days, peer offline for longer than threshold, disk space below threshold; follows PART 18 template system; disabled when no outbound email path is configured
 - Graceful shutdown: on SIGTERM, server stops accepting new connections, drains the in-flight SMTP/NNTP handler pool, flushes the outbound email retry queue to DB, and then exits cleanly; scheduler jobs are checkpointed so they resume on next startup without data loss; configurable drain timeout (default 30 s) after which the process exits forcibly
-- Multi-user support (PART 34): subscriber accounts with login, delivery prefs, token-based API auth; registration mode configurable (open / invite / admin_only / disabled); default `open`
+- Multi-user support (PART 34): subscriber accounts with login, delivery prefs, token-based API auth; registration mode configurable (open / invite / admin_only / disabled); default `open`; MFA via TOTP (see PART 11/34); active session listing and per-session revocation from subscriber account settings (see PART 34)
 - Organizations (PART 35): an organization owns a set of newsgroups and has a shared moderator team; operators group related lists under a named org for delegation and billing separation
 - Custom domains (PART 36): each org or the server itself can serve web/email under a custom domain; ACME cert provisioned per domain; `List-Id` and email headers use the custom domain
 
@@ -133,7 +143,9 @@ gospool implements the following RFC-defined protocols. Full compliance is manda
 - RFC 5322 — Internet Message Format
 - RFC 6531 — SMTP Extension for Internationalized Email
 - RFC 4422 — SASL (Simple Authentication and Security Layer)
+- RFC 4616 — PLAIN SASL mechanism (TLS-only on NNTP listener)
 - RFC 5802 — SCRAM-SHA-256 (SASL mechanism)
+- RFC 4954 — SMTP AUTH extension
 - RFC 6376 — DKIM Signatures
 - RFC 7208 — SPF (Sender Policy Framework)
 - RFC 7489 — DMARC
@@ -157,6 +169,7 @@ gospool implements the following RFC-defined protocols. Full compliance is manda
 - RFC 8555 — ACME (Automatic Certificate Management Environment) for TLS cert renewal
 
 **Other**
+- RFC 2142 — Mailbox Names for Common Services (well-known role addresses: `postmaster@`, `abuse@`, `usenet@`)
 - RFC 4155 — The `application/mbox` Media Type (mbox archive format, used by migration tool)
 - RFC 4287 — Atom Syndication Format (per-group Atom feeds)
 - RFC 9116 — `security.txt` (see PART 15)
@@ -179,6 +192,15 @@ YAML config file (see PART 5). Configurable areas:
 - **Spam engine**: RBL server list, per-group score thresholds, enable flags
 - **AV engine**: signature database path, update URL, enable flag
 - **Env var overrides**: all runtime config values can be overridden via environment variables without editing YAML — see PART 5 for the full runtime and init-only variable table; `SMTP_*` vars (HOST, PORT, USERNAME, PASSWORD, FROM_NAME, FROM_EMAIL, TLS) override the outbound relay settings
+- **Database**: SQLite only (v1); path configurable — see PART 10 for idempotent schema-on-startup approach; PostgreSQL is explicitly out of scope for v1
+- **Backup / restore**: `gospool --maintenance backup [filename]` — see PART 22 for format (`.tar.gz[.enc]`), manifest, encryption, and restore procedure; gospool-specific additions to backup contents: article store directory and DKIM key blobs
+- **Config hot-reload**: SIGHUP is ignored (per PART 8); config file is watched automatically and hot-reloaded on change; settings that cannot reload without a restart set a `pending_restart` flag visible in the admin dashboard (see PART 13)
+- **Security headers, CSP, HSTS, rate limiting**: see PART 11 (mandatory all projects)
+- **Health endpoints**: `GET /server/healthz` (HTML/JSON) + `GET /api/{api_version}/server/healthz` (JSON) — see PART 13; gospool-specific health stats: articles total, delivery queue depth, peer count, bounce rate 24h
+- **API versioning and OpenAPI spec**: all API routes under `/api/{api_version}/`; OpenAPI spec served at `/api/{api_version}/server/swagger` — see PART 14
+- **Internationalisation**: all human-readable strings (web, admin panel, CLI, emails) are translatable — see PART 31; server-default language: English; supports EN, ES, ZH, FR, AR, DE, JA
+- **Service files**: systemd unit, OpenRC init script — see PART 25; generated / installed by `gospool --service install`
+- **robots.txt and sitemap**: served at `/robots.txt`; private group paths and archive routes for private groups disallowed for unauthenticated crawlers — see PART 16
 
 ### Roles & permissions
 
@@ -410,7 +432,7 @@ Generic RFC 4155 mbox import into a named group. Accepts: mbox file path, target
 
 **Moderation:** view held-message queue, approve or reject articles with optional reason, hold or unhold a sender
 
-**Peer management:** list, add, remove, and show status of NNTP peer connections
+**Peer management:** list, add, remove, and show status of NNTP peer connections; test peer connection (one-click NNTP handshake to verify a peer is reachable and authenticates correctly)
 
 **Article inspection:** show article by Message-ID, cancel an article, search articles by group/sender/subject/date
 
