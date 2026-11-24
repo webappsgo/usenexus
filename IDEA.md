@@ -27,6 +27,7 @@ project_name:     gospool
 project_org:      webappsgo
 # FROZEN — set once at first-time setup, never edit
 internal_name:    gospool
+internal_org:     webappsgo
 app_name:         GoSpool
 official_site:    gospool.dev
 maintainer_name:  webappsgo
@@ -202,6 +203,44 @@ YAML config file (see PART 5). Configurable areas:
 - **Service files**: systemd unit, OpenRC init script — see PART 25; generated / installed by `gospool --service install`
 - **robots.txt and sitemap**: served at `/robots.txt`; private group paths and archive routes for private groups disallowed for unauthenticated crawlers — see PART 16
 - **Prometheus metrics**: mandatory `/metrics` endpoint in Prometheus exposition format — see PART 21; gospool-specific gauges: articles total, delivery queue depth, peer connection count, bounce rate 24h, spam hold rate
+
+### API routes
+
+All paths below are canonical routes under `/api/{api_version}`. Template-owned health, authentication, user, organization, server-admin, OpenAPI, and metrics routes are defined by their AI.md PARTs and are not duplicated here.
+
+| Method | Path | Auth | Purpose | Request / response summary |
+|--------|------|------|---------|-----------------------------|
+| GET | `/groups` | Public; private groups require a session | List visible groups | Optional org and pagination filters; returns group summaries and counts |
+| POST | `/groups` | Server admin or org owner/admin | Create a group | Group settings; returns created group |
+| GET | `/groups/{group}` | Public for public groups; otherwise session | Read group details | Returns settings visible to caller and article watermarks |
+| PATCH | `/groups/{group}` | Server admin or owning org owner/admin | Update group settings | Partial settings object; returns updated group |
+| DELETE | `/groups/{group}` | Server admin or owning org owner/admin | Delete a group | No body; returns deletion result |
+| GET | `/groups/{group}/articles` | Public for public groups; otherwise session | Browse group articles | Pagination/search filters; returns article headers and IDs |
+| GET | `/articles/{message_id}` | Public for public groups; otherwise session | Fetch an article | Returns article headers and body metadata |
+| POST | `/groups/{group}/subscriptions` | Session | Subscribe to a group | Delivery mode and confirmation data; returns subscription state |
+| GET | `/groups/{group}/subscriptions` | Session or group moderator | List subscriptions or current membership | Returns caller membership; moderator scope returns paginated membership summaries |
+| PATCH | `/groups/{group}/subscriptions` | Session | Change own delivery preferences | Delivery mode and tag preferences; returns updated membership |
+| DELETE | `/groups/{group}/subscriptions` | Session or group moderator | Unsubscribe self or remove a member | Returns operation result without disclosing unrelated membership data |
+| GET | `/groups/{group}/moderation` | Assigned moderator or admin | List held articles | Pagination; returns pending article summaries |
+| POST | `/groups/{group}/moderation/{message_id}` | Assigned moderator or admin | Approve or reject a held article | Decision and optional reason; returns updated moderation state |
+| GET | `/peers` | Server admin | List configured peers | Pagination/status filters; returns peer summaries without secrets |
+| POST | `/peers` | Server admin | Add a peer | Peer connection and wildmat settings; returns peer summary |
+| GET | `/peers/{peer}` | Server admin | Read peer status | Returns configuration summary and connection status |
+| PATCH | `/peers/{peer}` | Server admin | Update a peer | Partial peer settings; returns peer summary |
+| DELETE | `/peers/{peer}` | Server admin | Remove a peer | Returns deletion result |
+| POST | `/peers/{peer}/test` | Server admin | Test NNTP connectivity and authentication | No body; returns bounded handshake result |
+| POST | `/imports/{format}` | Server admin | Import INN, Mailman 2/3, or mbox data | Format-specific source options and dry-run flags; returns counts and errors |
+| GET | `/webhooks` | Server admin | List webhooks | Pagination; returns endpoint metadata with secrets redacted |
+| POST | `/webhooks` | Server admin | Add a webhook | URL, events, and signing secret; returns endpoint metadata |
+| GET | `/webhooks/{webhook}` | Server admin | Read webhook status and recent deliveries | Returns metadata and bounded delivery history |
+| PATCH | `/webhooks/{webhook}` | Server admin | Update or enable a webhook | Partial settings; returns endpoint metadata |
+| DELETE | `/webhooks/{webhook}` | Server admin | Remove a webhook | Returns deletion result |
+| GET | `/audit-logs` | Server admin | Search audit events | Actor, resource, time, and pagination filters; returns events |
+| GET | `/audit-logs/export` | Server admin | Export audit events | Date/filter query; returns CSV or JSON download |
+| GET | `/server/status` | Server admin | Read operational status | Returns listener, queue, storage, peer, and bounce summaries |
+| POST | `/server/config/reload` | Server admin | Request config reload | No body; returns reload result and pending-restart settings |
+
+NNTP, NNTPS, SMTP, Tor, and I2P protocol surfaces are not HTTP API routes; their command and wire behavior is specified in the corresponding AI.md PARTs and SPEC.md overrides.
 
 ### Roles & permissions
 

@@ -233,3 +233,8 @@ gospool-specific for the inbound listener:
 | Auth | SMTP AUTH on inbound; disabled by default (MX-style, no auth from remote MTAs); can be enabled for submission-port deployments |
 | SPF / DKIM / DMARC check | Whether to validate sender domain authentication on inbound; default true |
 | RBL checks | Whether to query configured DNS blocklists on the connecting IP; default true |
+
+## Optional parts
+- PART 34: REQUIRED
+- PART 35: REQUIRED
+- PART 36: REQUIRED
