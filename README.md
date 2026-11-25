@@ -37,8 +37,10 @@ and peering remain in the product backlog.
 - Companion CLI for API root, health, public group, and article reads.
 
 Outbound SMTP supports account verification and password reset when a working
-relay is configured under `server.notifications.email.smtp`; without a relay, email is
-disabled and registration skips verification. Peer feeds, subscription fanout,
+relay is configured under `server.notifications.email.smtp`. Administrators can
+configure and test the relay at `/server/{admin_path}/email` and manage embedded
+email templates there. Environment overrides take precedence over saved SMTP
+settings. Without a working relay, email is disabled and registration skips verification. Peer feeds, subscription fanout,
 moderation, and most of the planned mailing-list workflows are not implemented.
 This build is not ready for production use as a public news server.
 
