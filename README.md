@@ -5,9 +5,10 @@
 [![License](https://img.shields.io/github/license/webappsgo/usenexus)](LICENSE.md)
 [![Documentation](https://readthedocs.org/projects/webappsgo-gospool/badge/?version=latest)](https://webappsgo-gospool.readthedocs.io/)
 
-GoSpool is a self-hosted Usenet and mailing-list bridge. Its planned product
-surface includes NNTP/NNTPS, inbound and outbound email, moderation, peering,
-subscriber self-service, and a web archive.
+GoSpool is a self-hosted Usenet and mailing-list bridge. NNTP/NNTPS access,
+inbound email-to-group delivery, a shared web archive, subscriber accounts,
+and scoped user API tokens are available. Mailing-list fanout, moderation,
+and peering remain in the product backlog.
 
 ## Official site
 
@@ -16,28 +17,37 @@ subscriber self-service, and a web archive.
 ## Current features
 
 - Server-rendered public group and article archive pages.
-- Plain NNTP reader commands for public groups and articles. `AUTHINFO USER/PASS`
-  is accepted only on encrypted NNTPS, for verified, unsuspended
-  regular-user records. There is no account-creation flow, so posting is
-  refused by default unless operators have provisioned eligible records.
-- Optional NNTPS listener when TLS is enabled and a valid certificate is
-  configured or discovered.
+- Privacy and terms pages with deployment-configured disclosures and terms text.
+- NNTP reader commands for public groups and articles, with STARTTLS on the
+  plain NNTP port and an optional NNTPS listener. `AUTHINFO USER/PASS` is
+  accepted on encrypted NNTP sessions for verified, unsuspended regular-user
+  records. Regular-user registration can create eligible accounts when the
+  registration mode is `open`; posting is refused by default until such an
+  account is verified and authenticated.
 - Versioned JSON API, read-only GraphQL, health checks, and aggregate public
   Prometheus metrics.
 - First-run administrator setup, password login, TOTP MFA, and recovery keys.
+- Regular-user registration, sign-in, profile and password settings, active
+  session revocation, user API tokens, and administrator-issued invitations.
+- Inbound SMTP list posting at `list+group@domain`, with bounded messages,
+  recipient and connection limits, optional STARTTLS, and optional TLS-only
+  SMTP AUTH. The listener tries ports 25, 2525, then an OS-assigned port unless
+  `SMTP_IN_PORT` explicitly locks the port.
 - SQLite by default, with PostgreSQL support.
 - Companion CLI for API root, health, public group, and article reads.
 
-SMTP, peer feeds, STARTTLS, subscriber management, moderation, and most of the
-planned mailing-list workflows are not implemented. This build is not ready
-for production use as a public news server.
+Outbound SMTP supports account verification and password reset when a working
+relay is configured under `server.notifications.email.smtp`; without a relay, email is
+disabled and registration skips verification. Peer feeds, subscription fanout,
+moderation, and most of the planned mailing-list workflows are not implemented.
+This build is not ready for production use as a public news server.
 
 ## Production deployment
 
-The shipped Compose files publish ports for planned services that the current
-server does not bind. Build and run locally to explore the available behavior.
-The default HTTP and NNTP ports (80 and 119) are privileged on Unix-like
-systems. Use a service manager or choose unprivileged ports for local use.
+The Compose files publish the HTTP, NNTP, NNTPS, and SMTP ports. The inbound
+SMTP listener uses the configured fallback port sequence. The default HTTP,
+NNTP, and SMTP ports (80, 119, and 25) are privileged on Unix-like systems.
+Use a service manager or choose unprivileged ports for local use.
 
 ## Client
 
@@ -47,7 +57,8 @@ Build the server and CLI in the project’s Go container:
 make local
 ```
 
-Start the server with defaults (HTTP port 80 and NNTP port 119):
+Start the server with defaults (HTTP port 80, NNTP port 119, and inbound SMTP
+port 25 with fallback):
 
 ```sh
 ./binaries/gospool
@@ -56,7 +67,7 @@ Start the server with defaults (HTTP port 80 and NNTP port 119):
 For unprivileged local ports:
 
 ```sh
-PORT=8080 NNTP_PORT=1119 ./binaries/gospool
+PORT=8080 NNTP_PORT=1119 SMTP_IN_PORT=2525 ./binaries/gospool
 ```
 
 On first start the server creates its configuration and prints a one-time
@@ -75,9 +86,10 @@ The CLI is built as `binaries/gospool-cli` and supports `api`, `status`,
 
 The server creates `server.yml` on first start. See the
 [configuration guide](https://webappsgo-gospool.readthedocs.io/en/latest/configuration/)
-for implemented settings and environment overrides. HTTP TLS termination and
-SMTP are unavailable. NNTP credentials are accepted over NNTPS, but the
-application does not provide an account-creation flow.
+for listener, user-registration, and environment settings. HTTP TLS termination
+is not implemented. NNTP credentials are accepted after STARTTLS or over NNTPS.
+Inbound SMTP can use the configured TLS certificate for STARTTLS. Outbound SMTP
+uses the configured `server.notifications.email.smtp` relay and TLS mode.
 
 ## API
 

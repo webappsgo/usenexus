@@ -117,7 +117,7 @@ maintainer_email: git-admin@casjaysdev.pro
 - Audit log: append-only log of admin and moderation actions — group create/delete/config change, subscriber add/remove/suspend, moderator assignment change, peer add/remove, user account change, server config change; stored in DB; queryable by actor, resource type, and date range via admin UI and API; never purged automatically
 - Admin email alerts: server admin receives email notifications for operational events — moderation queue depth exceeds threshold, per-group bounce rate exceeds threshold, TLS cert expiring within N days, peer offline for longer than threshold, disk space below threshold; follows PART 18 template system; disabled when no outbound email path is configured
 - Graceful shutdown: on SIGTERM, server stops accepting new connections, drains the in-flight SMTP/NNTP handler pool, flushes the outbound email retry queue to DB, and then exits cleanly; scheduler jobs are checkpointed so they resume on next startup without data loss; configurable drain timeout (default 30 s) after which the process exits forcibly
-- Multi-user support (PART 34): subscriber accounts with login, delivery prefs, token-based API auth; registration mode configurable (open / invite / admin_only / disabled); default `open`; MFA via TOTP (see PART 11/34); active session listing and per-session revocation from subscriber account settings (see PART 34)
+- Multi-user support (PART 34): subscriber accounts with login, delivery prefs, token-based API auth; registration mode configurable as `open` or `private` per AI.md; default `open`; MFA via TOTP (see PART 11/34); active session listing and per-session revocation from subscriber account settings (see PART 34)
 - Organizations (PART 35): an organization owns a set of newsgroups and has a shared moderator team; operators group related lists under a named org for delegation and billing separation
 - Custom domains (PART 36): each org or the server itself can serve web/email under a custom domain; ACME cert provisioned per domain; `List-Id` and email headers use the custom domain
 
@@ -412,14 +412,12 @@ An **organization** is an administrative boundary that owns a set of newsgroups 
 - API token for CLI/API auth (scoped to the user's own groups or org membership)
 - Optional display name and timezone for web interface
 
-**Registration mode** (configurable; see PART 34):
+**Registration mode** (configurable as `open` or `private`; see AI.md PART 34):
 
 | Mode | Behavior |
 |------|----------|
 | `open` (default) | Anyone can self-register; email verification required before account is active |
-| `invite` | Only admin-issued one-time invite links can create accounts |
-| `admin_only` | Server admin creates accounts directly; activation link emailed to new user |
-| `disabled` | No new accounts; existing users can still log in |
+| `private` | No public self-registration; server admins can invite or directly create accounts |
 
 Self-hosted deployments default to `open`.
 
