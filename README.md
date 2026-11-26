@@ -34,6 +34,9 @@ and peering remain in the product backlog.
   SMTP AUTH. The listener tries ports 25, 2525, then an OS-assigned port unless
   `SMTP_IN_PORT` explicitly locks the port.
 - SQLite by default, with PostgreSQL support.
+- User and organization custom domains with TXT ownership checks, public-page
+  routing, Let's Encrypt HTTP-01/TLS-ALPN-01 certificates, and encrypted
+  Cloudflare DNS-01 credentials for wildcard or firewalled domains.
 - Companion CLI for API root, health, public group/article reads, and scoped API
   token management. Its responsive TUI provides a view for each current CLI
   command.
@@ -48,7 +51,7 @@ This build is not ready for production use as a public news server.
 
 ## Production deployment
 
-The Compose files publish the HTTP, NNTP, NNTPS, and SMTP ports. The inbound
+The Compose files publish the HTTP, HTTPS, NNTP, NNTPS, and SMTP ports. The inbound
 SMTP listener uses the configured fallback port sequence. The default HTTP,
 NNTP, and SMTP ports (80, 119, and 25) are privileged on Unix-like systems.
 Use a service manager or choose unprivileged ports for local use.
@@ -61,8 +64,8 @@ Build the server and CLI in the project’s Go container:
 make local
 ```
 
-Start the server with defaults (HTTP port 80, NNTP port 119, and inbound SMTP
-port 25 with fallback):
+Start the server with defaults (HTTP port 80, HTTPS port 443, NNTP port 119,
+and inbound SMTP port 25 with fallback):
 
 ```sh
 ./binaries/gospool
@@ -71,7 +74,7 @@ port 25 with fallback):
 For unprivileged local ports:
 
 ```sh
-PORT=8080 NNTP_PORT=1119 SMTP_IN_PORT=2525 ./binaries/gospool
+PORT=8080 HTTPS_PORT=8443 NNTP_PORT=1119 SMTP_IN_PORT=2525 ./binaries/gospool
 ```
 
 On first start the server creates its configuration and prints a one-time
@@ -91,8 +94,9 @@ without arguments in a terminal. For example:
 
 The server creates `server.yml` on first start. See the
 [configuration guide](https://webappsgo-gospool.readthedocs.io/en/latest/configuration/)
-for listener, user-registration, and environment settings. HTTP TLS termination
-is not implemented. NNTP credentials are accepted after STARTTLS or over NNTPS.
+for listener, user-registration, custom-domain, and environment settings. The
+HTTPS listener defaults to port 443; a trusted front proxy can terminate TLS
+instead. NNTP credentials are accepted after STARTTLS or over NNTPS.
 Inbound SMTP can use the configured TLS certificate for STARTTLS. Outbound SMTP
 uses the configured `server.notifications.email.smtp` relay and TLS mode.
 
@@ -121,9 +125,9 @@ backlog is in `TODO.AI.md`; `AI.md` defines the required project baseline and
 
 ## Disclaimer
 
-GoSpool is under active development. The current implementation has not
-implemented the complete Usenet and mailing-list behavior described in the
-product plan. Review the documentation and test the software in a controlled
+GoSpool is under active development. The implementation is still being aligned
+with the complete Usenet and mailing-list behavior described in the project
+specification. Review the documentation and test the software in a controlled
 environment before relying on it.
 
 ## License
