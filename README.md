@@ -17,6 +17,8 @@ and peering remain in the product backlog.
 ## Current features
 
 - Server-rendered public group and article archive pages.
+- Public Atom/RSS feeds for the archive and each public group, with private
+  group filtering and conditional HTTP caching.
 - Privacy and terms pages with deployment-configured disclosures and terms text.
 - NNTP reader commands for public groups and articles, with STARTTLS on the
   plain NNTP port and an optional NNTPS listener. `AUTHINFO USER/PASS` is
