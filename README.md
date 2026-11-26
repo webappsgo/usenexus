@@ -34,7 +34,9 @@ and peering remain in the product backlog.
   SMTP AUTH. The listener tries ports 25, 2525, then an OS-assigned port unless
   `SMTP_IN_PORT` explicitly locks the port.
 - SQLite by default, with PostgreSQL support.
-- Companion CLI for API root, health, public group, and article reads.
+- Companion CLI for API root, health, public group/article reads, and scoped API
+  token management. Its responsive TUI provides a view for each current CLI
+  command.
 
 Outbound SMTP supports account verification and password reset when a working
 relay is configured under `server.notifications.email.smtp`. Administrators can
@@ -78,7 +80,8 @@ configured HTTP address) to create the initial administrator. The token
 digest is removed after setup succeeds.
 
 The CLI is built as `binaries/gospool-cli` and supports `api`, `status`,
-`groups`, and `groups articles NAME`. For example:
+`groups`, article reads, token management, and an interactive TUI when run
+without arguments in a terminal. For example:
 
 ```sh
 ./binaries/gospool-cli --server http://127.0.0.1:8080 groups
