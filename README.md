@@ -27,8 +27,8 @@ product backlog.
   records. Regular-user registration can create eligible accounts when the
   registration mode is `open`; posting is refused by default until such an
   account is verified and authenticated.
-- Versioned JSON API, read-only GraphQL, health checks, and aggregate public
-  Prometheus metrics.
+- Versioned JSON API, read-only GraphQL, health checks, and authenticated
+  Prometheus, Grafana, and Loki monitoring endpoints.
 - First-run administrator setup, password login, TOTP MFA, and recovery keys.
 - Regular-user registration, sign-in, profile and password settings, active
   session revocation, user API tokens, and administrator-issued invitations.
