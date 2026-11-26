@@ -29,6 +29,10 @@ product backlog.
   account is verified and authenticated.
 - Versioned JSON API, read-only GraphQL, health checks, and authenticated
   Prometheus, Grafana, and Loki monitoring endpoints.
+- Built-in, database-backed scheduling with restart catch-up, run history, and
+  a server-rendered administrator task page at
+  `/server/{admin_path}/scheduler`; task settings and history are also exposed
+  through the versioned administrator API.
 - First-run administrator setup, password login, TOTP MFA, and recovery keys.
 - Regular-user registration, sign-in, profile and password settings, active
   session revocation, user API tokens, and administrator-issued invitations.
