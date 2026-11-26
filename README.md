@@ -111,6 +111,7 @@ uses the configured `server.notifications.email.smtp` relay and TLS mode.
 
 - API root: `https://gospool.dev/api/v1`
 - Health: `https://gospool.dev/api/v1/server/healthz`
+- Unversioned health: `https://gospool.dev/api/healthz`
 - OpenAPI JSON: `https://gospool.dev/api/v1/server/swagger`
 - GraphQL endpoint: `https://gospool.dev/api/v1/server/graphql`
 - GraphQL browser page: `https://gospool.dev/server/docs/graphql`
