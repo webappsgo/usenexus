@@ -7,8 +7,9 @@
 
 GoSpool is a self-hosted Usenet and mailing-list bridge. NNTP/NNTPS access,
 inbound email-to-group delivery, a shared web archive, subscriber accounts,
-and scoped user API tokens are available. Mailing-list fanout, moderation,
-and peering remain in the product backlog.
+scoped user API tokens, double-opt-in subscriptions, and durable real-time
+subscriber email delivery are available. Moderation and peering remain in the
+product backlog.
 
 ## Official site
 
@@ -31,6 +32,8 @@ and peering remain in the product backlog.
 - First-run administrator setup, password login, TOTP MFA, and recovery keys.
 - Regular-user registration, sign-in, profile and password settings, active
   session revocation, user API tokens, and administrator-issued invitations.
+- Server-rendered subscription join and management pages, email confirmation,
+  member preferences, and persistent retrying real-time article fanout.
 - Inbound SMTP list posting at `list+group@domain`, with bounded messages,
   recipient and connection limits, optional STARTTLS, and optional TLS-only
   SMTP AUTH. The listener tries ports 25, 2525, then an OS-assigned port unless
@@ -47,8 +50,10 @@ Outbound SMTP supports account verification and password reset when a working
 relay is configured under `server.notifications.email.smtp`. Administrators can
 configure and test the relay at `/server/{admin_path}/email` and manage embedded
 email templates there. Environment overrides take precedence over saved SMTP
-settings. Without a working relay, email is disabled and registration skips verification. Peer feeds, subscription fanout,
-moderation, and most of the planned mailing-list workflows are not implemented.
+settings. Without a working relay, email is disabled and registration skips
+verification. Only `realtime` subscriber delivery is currently implemented;
+digest delivery, moderation, peer feeds, and other planned mailing-list
+workflows remain incomplete.
 This build is not ready for production use as a public news server.
 
 ## Production deployment
