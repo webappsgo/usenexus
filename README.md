@@ -8,8 +8,9 @@
 GoSpool is a self-hosted Usenet and mailing-list bridge. NNTP/NNTPS access,
 inbound email-to-group delivery, a shared web archive, subscriber accounts,
 scoped user API tokens, double-opt-in subscriptions, and durable real-time
-subscriber email delivery are available. Moderation and peering remain in the
-product backlog.
+subscriber email delivery are available. Peer definitions can be managed in
+the administrator page and API; automated feed exchange and moderation remain
+in the product backlog.
 
 ## Official site
 
@@ -33,6 +34,8 @@ product backlog.
   a server-rendered administrator task page at
   `/server/{admin_path}/scheduler`; task settings and history are also exposed
   through the versioned administrator API.
+- Server-rendered peer configuration at `/server/{admin_path}/peers` and
+  bearer-authenticated peer management and connectivity checks at `/api/v1/peers`.
 - First-run administrator setup, password login, TOTP MFA, and recovery keys.
 - Regular-user registration, sign-in, profile and password settings, active
   session revocation, user API tokens, and administrator-issued invitations.
