@@ -17,7 +17,9 @@ complete setup before exposing the service.
 - Sign in at `/server/auth/login?admin=1`. Sign out from the administration
   page. The administrator sign-in route is intentionally not advertised on
   public pages.
-- The session lasts twelve hours.
+- The `admin_session` cookie expires after 30 days absolutely and after 24
+  hours of inactivity. Requests extend inactivity expiry but never the
+  absolute lifetime.
 - An administrator can enroll an authenticator at `/server/auth/totp`.
   Enrollment requires a valid six-digit TOTP code and the pending setup expires
   after ten minutes.
@@ -47,6 +49,9 @@ delete them. Mutations use the administrator session and CSRF token; no
 JavaScript is required. Group forms expose name, description, visibility,
 posting policy, peer-exchange setting, and the default delivery mode for new
 subscribers (`realtime`, `digest`, `nomail`, or `announcement`).
+Digest groups can deliver daily, weekly, or when either a configured article
+count or total message-size threshold is reached. Message sizes accept
+human-readable units such as `1MB`; leaving a threshold at zero disables it.
 Peer ingestion is accepted only from enabled inbound peers over TLS. Peer
 wildmat filters and each group's peer-exchange setting control which groups
 receive incoming articles and which matching articles enter the durable

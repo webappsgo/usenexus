@@ -38,6 +38,13 @@ server:
   admin_path: administration
   api_version: v1
   mode: production
+  session:
+    admin: {cookie_name: admin_session, max_age: 30d, idle_timeout: 24h}
+    user: {cookie_name: user_session, max_age: 7d, idle_timeout: 24h}
+    extend_on_activity: true
+    secure: auto
+    http_only: true
+    same_site: strict
   rate_limit:
     read: {requests: 120, window: 60}
     write: {requests: 10, window: 60}
@@ -193,11 +200,9 @@ database:
 Scheduler configuration is loaded and validated. Custom-domain verification,
 SSL renewal, and pending-domain cleanup run on their configured schedules.
 The `digest_delivery` task checks for subscriber digest batches every 15
-minutes; it sends a batch after its daily 24-hour window and retries temporary
-SMTP failures. Weekly windows and per-group threshold triggers are not
-available yet. Other configured scheduler tasks are documented with the
-scheduler and remain subject to their implementation status in the operator
-guide.
+minutes and retries temporary SMTP failures. Groups can use daily or weekly
+delivery windows, or a threshold trigger based on article count, total message
+size, or either configured threshold. The default remains daily delivery.
 
 The implemented configuration fields are:
 
@@ -223,6 +228,13 @@ The implemented configuration fields are:
 | `server.seo.feed.max_items` | `50` | Entries in public Atom/RSS feeds; range 1–200. |
 | `server.seo.feed.title` | empty | Channel title, defaulting to `GoSpool`. |
 | `server.admin_path` | `administration` | One safe path segment. |
+| `server.session.admin.cookie_name` / `.user.cookie_name` | `admin_session` / `user_session` | Names of the administrator and regular-user session cookies. |
+| `server.session.admin.max_age` / `.user.max_age` | `30d` / `7d` | Absolute session lifetime; accepts Go duration units and day notation. |
+| `server.session.admin.idle_timeout` / `.user.idle_timeout` | `24h` / `24h` | Session expires after this period without activity. |
+| `server.session.extend_on_activity` | `true` | Refreshes the inactivity timer after authenticated requests, without extending absolute expiry. |
+| `server.session.secure` | `auto` | Cookie Secure policy: `auto`, `true`, or `false`. |
+| `server.session.http_only` | `true` | Prevents browser scripts from reading session cookies. |
+| `server.session.same_site` | `strict` | Cookie policy: `strict`, `lax`, or `none`; `none` requires `server.session.secure: true`. |
 | `server.api_version` | `v1` | Version segment used by HTTP API routes. |
 | `server.metrics.enabled` | `true` | Enables internal Prometheus, Grafana, and Loki endpoints. |
 | `server.metrics.root.enabled` | `true` | Enables `/metrics[/{service}]` aliases; `/server/metrics` stays available when disabled. |

@@ -64,14 +64,14 @@ The `.txt` suffix applies to versioned API routes.
 | `GET` | `/api/v1/server/privacy` | Public | Deployment privacy settings and disclosures. |
 | `GET` | `/api/v1/server/terms` | Public | Terms of service content. |
 | `GET` | `/api/v1/groups` | Public groups anonymously; includes private groups for signed-in users or administrators | Lists visible groups. |
-| `GET` | `/api/v1/groups/{group}` | Public for public groups; signed-in user or administrator session for private groups | Returns group settings and article watermarks. |
-| `GET` | `/api/v1/groups/{group}/articles` | Public for public groups; signed-in user or administrator session for private groups | Returns up to 100 recent article summaries. |
+| `GET` | `/api/v1/groups/{group}` | Public for public groups; signed-in user or administrator session/bearer token for private groups | Returns group settings and article watermarks. |
+| `GET` | `/api/v1/groups/{group}/articles` | Public for public groups; signed-in user or administrator session/bearer token for private groups | Returns up to 100 recent article summaries. |
 | `GET`, `POST`, `PATCH`, `DELETE` | `/api/v1/groups/{group}/subscriptions` | Signed-in user; group moderator for roster/removal actions | Reads own membership, requests a double-opt-in public-group subscription, updates confirmed delivery preferences, or unsubscribes/removes a member. Private-group membership is invitation-only. POST returns `202` while confirmation is pending. |
 | `GET`, `POST` | `/api/v1/server/{admin_path}/groups/{group}/moderators` | Server administrator session; POST requires CSRF verification | Lists assigned group moderators or grants/revokes a moderator role with `{"username":"name","action":"grant|revoke"}`. Grants require an active, verified user. |
 | `GET` | `/api/v1/articles/{messageID}` | Public for public articles; signed-in user or administrator session for private articles | Returns article metadata; the body is not included. |
-| `POST` | `/api/v1/groups` | Administrator session + CSRF | Creates a group. |
-| `PATCH` | `/api/v1/groups/{group}` | Administrator session + CSRF | Updates the group name, description, visibility, posting policy, or peer-exchange setting. |
-| `DELETE` | `/api/v1/groups/{group}` | Administrator session + CSRF | Deletes a group and its subscriptions, queued deliveries, article links, and moderation queue entries. Archived article bodies remain available only through any other groups that reference them. |
+| `POST` | `/api/v1/groups` | Administrator session + CSRF, or `adm_` bearer token with write access | Creates a group. |
+| `PATCH` | `/api/v1/groups/{group}` | Administrator session + CSRF, or `adm_` bearer token with write access | Updates group name, description, visibility, posting policy, peer-exchange setting, and default delivery mode. |
+| `DELETE` | `/api/v1/groups/{group}` | Administrator session + CSRF, or `adm_` bearer token with write access | Deletes a group and its subscriptions, queued deliveries, article links, and moderation queue entries. Archived article bodies remain available only through any other groups that reference them. |
 | `GET`, `POST` | `/api/v1/peers` | `adm_` Bearer token; POST requires a write-capable token | Lists configured NNTP peers without credentials or adds a peer with encrypted authentication data. |
 | `GET`, `PATCH`, `DELETE` | `/api/v1/peers/{peer}` | `adm_` Bearer token; mutations require a write-capable token | Reads, updates, or removes a configured peer. |
 | `POST` | `/api/v1/peers/{peer}/test` | `adm_` Bearer token with write scope | Performs a bounded NNTP greeting, optional TLS/authentication, and capabilities handshake. |
@@ -174,19 +174,23 @@ Group creation accepts JSON like:
   "description": "Example group",
   "visibility": "public",
   "posting_policy": "open",
-  "peering_enabled": true
+  "peering_enabled": true,
+  "default_delivery_mode": "realtime"
 }
 ```
 
 The server validates group names, description length, visibility (`public` or
-`private`), and posting policy (`open`, `subscribers_only`, or `moderated`).
-The request uses the administrator's `gospool_session` cookie and a CSRF token
-in the `X-CSRF-Token` header. A bearer token is not accepted for group
-creation, update, or deletion.
+`private`), posting policy (`open`, `subscribers_only`, or `moderated`), and
+default delivery mode (`realtime`, `digest`, `nomail`, or `announcement`).
+Browser requests use the administrator's `admin_session` cookie and a CSRF
+token in the `X-CSRF-Token` header. API clients may use an `adm_` bearer token;
+`read` tokens cannot create, update, or delete groups. The configured operator
+token also has administrator access.
 
 Group updates accept any non-empty subset of `name`, `description`,
-`visibility`, `posting_policy`, and `peering_enabled`. Supplying a new `name`
-renames the group while preserving its article and subscription relationships.
+`visibility`, `posting_policy`, `peering_enabled`, and
+`default_delivery_mode`. Supplying a new `name` renames the group while
+preserving its article and subscription relationships.
 The peer-exchange setting controls inbound peer ingestion and outbound queueing.
 For example:
 

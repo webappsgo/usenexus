@@ -24,15 +24,32 @@ move through the menu. `TERM=dumb` always disables interactive mode.
 | `api` | Prints the API root response. |
 | `status` | Reads server health. |
 | `groups` | Lists public groups. |
+| `groups show NAME` | Reads a group, including private groups with administrator access. |
+| `groups create NAME [DESCRIPTION]` | Creates a group (administrator token required). |
+| `groups update NAME KEY=VALUE...` | Updates group settings (administrator token required). |
+| `groups delete NAME` | Deletes a group (administrator token required). |
 | `groups articles NAME` | Lists recent article headers for a public group. |
 | `articles show MESSAGE-ID` | Reads an article by Message-ID. |
 | `tokens list` | Lists the current user's API tokens. |
 | `tokens create NAME [SCOPE]` | Creates a token; scope defaults to `read`. |
 | `tokens revoke ID` | Revokes a token. |
+| `peers [list]` | Lists configured NNTP peers. |
+| `peers show ID` | Reads a peer configuration and connection status. |
+| `peers create hostname=HOST [KEY=VALUE...]` | Adds a peer; defaults are port `563`, TLS enabled, direction `both`, wildmat `*`, and enabled. |
+| `peers update ID KEY=VALUE...` | Updates peer settings. |
+| `peers delete ID` | Removes a peer. |
+| `peers test ID` | Tests the peer's NNTP greeting, TLS, authentication, and capabilities. |
 
 Token management commands require a user token with the corresponding scope.
 `login` is not available because the server does not expose a client login
 endpoint.
+
+Peer commands require a server administrator bearer token. Peer settings accept
+`hostname`, `port`, `tls`, `direction`, `auth_user`, `wildmat`, and `enabled`.
+For authenticated peers, pass `password_file=PATH` using a regular file with no
+group or world permissions; password values are never accepted as command-line
+arguments. An update can remove saved credentials with
+`clear_password=true`.
 
 ## Configuration and output
 
@@ -69,6 +86,9 @@ gospool-cli --server http://127.0.0.1:8080 --json groups
 gospool-cli --server http://127.0.0.1:8080 articles show '<message@example.test>'
 ```
 
-The client currently exposes only the commands listed above. The broader
-IDEA.md management operations depend on API routes and workflows that are not
-implemented yet.
+Group creation, updates, deletion, and peer management require an administrator
+bearer token. The configured operator token has administrator access and can be
+passed with `--token`. Group updates accept settings such as `visibility` and
+`default_delivery_mode`. Subscriber administration, moderation, and the other
+IDEA.md client operations remain unavailable until their server workflows are
+implemented.

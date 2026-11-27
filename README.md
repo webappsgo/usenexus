@@ -110,12 +110,19 @@ setup token to stderr. Open `http://127.0.0.1:8080/server/auth/setup` (or the
 configured HTTP address) to create the initial administrator. The token
 digest is removed after setup succeeds.
 
-The CLI is built as `binaries/gospool-cli` and supports `api`, `status`,
-`groups`, article reads, token management, and an interactive TUI when run
-without arguments in a terminal. For example:
+The CLI is built as `binaries/gospool-cli` and supports `api`, `status`, public
+group listing and detail, administrator group lifecycle operations, article
+reads, token management, and an interactive TUI when run without arguments in
+a terminal. Group creation, updates, and deletion require an administrator
+bearer token; the configured operator token has administrator access. It can
+also read private groups. For example:
 
 ```sh
 ./binaries/gospool-cli --server http://127.0.0.1:8080 groups
+./binaries/gospool-cli --server http://127.0.0.1:8080 --token "$GOSPOOL_TOKEN" groups create comp.example "Example group"
+./binaries/gospool-cli --server http://127.0.0.1:8080 --token "$GOSPOOL_TOKEN" groups update comp.example visibility=private
+./binaries/gospool-cli --server http://127.0.0.1:8080 --token "$GOSPOOL_TOKEN" groups show comp.example
+./binaries/gospool-cli --server http://127.0.0.1:8080 --token "$GOSPOOL_TOKEN" groups delete comp.example
 ```
 
 ## Configuration

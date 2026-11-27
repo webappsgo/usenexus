@@ -8,8 +8,12 @@ been implemented.
 
 - Administrator passwords are hashed with Argon2id and random salts.
 - Sessions use random bearer values; only their SHA-256 hashes are stored.
-  The `gospool_session` cookie is HTTP-only, SameSite=Lax, and expires after
-  twelve hours.
+  Administrator sessions use the HTTP-only `admin_session` cookie, expire
+  absolutely after 30 days, and expire after 24 hours of inactivity. User
+  sessions use the HTTP-only `user_session` cookie, expire absolutely after
+  seven days, and expire after 24 hours of inactivity. Activity refreshes the
+  idle timer; it does not extend the absolute lifetime. Both cookies default
+  to SameSite=Strict and Secure is enabled automatically for TLS requests.
 - A separate `gospool_csrf` cookie and matching request token protect forms.
   Token comparisons use constant-time checks.
 - After five failed login attempts from one client IP, further attempts are
@@ -28,8 +32,9 @@ The HTTP server can terminate TLS on `server.https_port` (443 by default),
 including automatic Let's Encrypt certificates for eligible custom domains.
 Custom-domain DNS-provider credentials and issued certificates are encrypted
 with AES-256-GCM using `installation.secret`; losing that key makes the stored
-secrets unrecoverable. Session cookies receive the `Secure` attribute when the
-Go process itself receives a TLS connection. Plain HTTP and plain NNTP do not
+secrets unrecoverable. Session cookies receive the `Secure` attribute for
+direct TLS connections and for HTTPS forwarded by a trusted proxy. Plain HTTP
+and plain NNTP do not
 encrypt traffic. NNTPS and STARTTLS start when enabled and a valid certificate
 is available. `AUTHINFO USER/PASS` is accepted only on encrypted NNTP sessions
 and validates verified, unsuspended regular-user records. Regular users can

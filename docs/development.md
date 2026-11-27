@@ -20,6 +20,18 @@ changes, install `docs/requirements.txt` in a Python environment and build the
 site with `mkdocs build --strict` before submitting.
 
 The binary integration checks run the server in a temporary Docker container.
+They verify that `/server/healthz` returns formatted non-HTML output for
+`Accept: text/plain` and server-rendered HTML for `Accept: text/html`. The Tor
+and I2P bootstrap waits default to 300 and 600 seconds; set `TOR_WAIT` or
+`I2P_WAIT` to change either timeout. A network-dependent bootstrap timeout is
+reported as a skip after the health contract is checked. Set
+`REQUIRE_OVERLAY=1` to fail instead of skipping when either overlay is not
+healthy within its wait. For example:
+
+```sh
+TOR_WAIT=300 I2P_WAIT=600 REQUIRE_OVERLAY=1 tests/docker.sh
+```
+
 Build binaries into an isolated directory and point the test runner at it:
 
 ```sh
