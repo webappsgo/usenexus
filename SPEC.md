@@ -234,6 +234,28 @@ gospool-specific for the inbound listener:
 | SPF / DKIM / DMARC check | Whether to validate sender domain authentication on inbound; default true |
 | RBL checks | Whether to query configured DNS blocklists on the connecting IP; default true |
 
+## Email command addressing and confirmation
+
+Subscription commands are sent as plain text in the message body to the
+per-group conventional Mailman-style address `{group}-request@{server.fqdn}`.
+The global `commands@{server.fqdn}` and `list+commands@{server.fqdn}` addresses
+are aliases; these commands include a group name. The existing
+`list+{group}@{server.fqdn}` posting address also accepts a command when the
+first non-empty body line is a recognized command. A message to that address
+that does not start with a recognized command continues through ordinary
+article posting.
+
+Supported commands are `SUBSCRIBE [group]`, `UNSUBSCRIBE [group]`,
+`DIGEST [group]`, and `HELP`. Group-specific request addresses may omit the
+group argument. `DIGEST` selects digest delivery; `SUBSCRIBE` uses the group's
+default delivery mode. Commands are accepted only from the verified primary
+email address of an active, verified GoSpool account. A command never changes
+membership or delivery settings immediately: the server emails a single-use,
+expiring confirmation link to that account address, and applies the requested
+operation only after the link is submitted. Unknown senders receive no response
+that reveals account or subscription existence. The reply-to address is the
+configured server notification sender.
+
 ## Optional parts
 - PART 34: REQUIRED
 - PART 35: REQUIRED
