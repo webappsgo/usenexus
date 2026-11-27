@@ -89,7 +89,7 @@ Use a service manager or choose unprivileged ports for local use.
 Build the server and CLI in the project’s Go container:
 
 ```sh
-make local
+make build
 ```
 
 Start the server with defaults (HTTP port 80, HTTPS port 443, NNTP port 119,
@@ -148,7 +148,7 @@ installation, administration, security, integrations, and development.
 
 ## Development
 
-Build in the required Go container with `make local`. The primary implementation
+Build in the required Go container with `make build`. The primary implementation
 backlog is in `TODO.AI.md`; `AI.md` defines the required project baseline and
 `SPEC.md` records project-specific overrides.
 

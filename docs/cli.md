@@ -1,6 +1,6 @@
 # Command-line client
 
-Build the server and client with `make local`; the client is written to
+Build the server and client with `make build`; the client is written to
 `binaries/gospool-cli`.
 
 ```sh

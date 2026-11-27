@@ -41,7 +41,7 @@ are no approved translated terms yet.
 |---|---|
 | Article | A Usenet message stored and displayed in a newsgroup archive. |
 | Newsgroup | A named Usenet discussion group. |
-| Mailing list | Email subscription and delivery behavior planned for the product. |
+| Mailing list | A group's subscriber membership, moderation, and email-delivery workflow. |
 | Peer | Another Usenet server exchanging articles with GoSpool. |
 | Feed | An NNTP transfer of articles between servers. |
 | Subscriber | A user who receives mailing-list delivery for a group. |

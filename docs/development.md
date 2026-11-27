@@ -9,12 +9,13 @@ Go is built and tested only in the project Go container:
 
 ```sh
 make test
-make local
+make build
 ```
 
-`make test` runs `go vet`, `govulncheck`, and `go test -cover`. The project
-implementation standard is `AI.md`, with project-specific overrides in
-`SPEC.md`. `IDEA.md` is the product behavior reference. For documentation
+`make test` runs Stylelint, `go vet`, `staticcheck`, `govulncheck`, ShellCheck,
+`shfmt`, the Go tests with coverage, and the basic Docker binary checks. The
+project implementation standard is `AI.md`, with project-specific overrides
+in `SPEC.md`. `IDEA.md` is the product behavior reference. For documentation
 changes, install `docs/requirements.txt` in a Python environment and build the
 site with `mkdocs build --strict` before submitting.
 
@@ -24,7 +25,7 @@ Build binaries into an isolated directory and point the test runner at it:
 ```sh
 mkdir -p "${TMPDIR:-/tmp}/webappsgo"
 GOSPOOL_BUILD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/webappsgo/gospool-XXXXXX")"
-make BINDIR="$GOSPOOL_BUILD_DIR" local
+make BINDIR="$GOSPOOL_BUILD_DIR" build
 BINDIR="$GOSPOOL_BUILD_DIR" tests/run_tests.sh
 make BINDIR="$GOSPOOL_BUILD_DIR" clean
 ```

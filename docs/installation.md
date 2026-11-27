@@ -5,11 +5,12 @@
 Go compilation uses the project’s Go Docker image:
 
 ```sh
-make local
+make build
 ```
 
-The server binary is written to `binaries/gospool`. `make test` runs `go vet`,
-`govulncheck`, and the Go test suite in the same container toolchain.
+The server binary is written to `binaries/gospool`. `make test` runs the
+Stylelint, Go, and shell checks, coverage-enforced Go tests, and basic Docker
+binary checks.
 
 ## Run the server
 
