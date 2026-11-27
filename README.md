@@ -8,9 +8,13 @@
 GoSpool is a self-hosted Usenet and mailing-list bridge. NNTP/NNTPS access,
 inbound email-to-group delivery, a shared web archive, subscriber accounts,
 scoped user API tokens, double-opt-in subscriptions, and durable real-time
-subscriber email delivery are available. Peer definitions can be managed in
-the administrator page and API; automated feed exchange and moderation remain
-in the product backlog.
+subscriber email delivery are available. Configured NNTP peers support
+authenticated TLS inbound feeds, NEWNEWS-based passive pull, queued outbound
+push with retry, wildmat filters, per-group peering controls, article age
+cutoff, and per-connection article/byte rate holds. Peer control messages are
+held for administrator review before group changes are applied; the complete
+article moderation workflow remains outstanding. Prometheus reports
+connected peers, peer articles in/out, and queued peer deliveries.
 
 ## Official site
 
@@ -59,9 +63,11 @@ configure and test the relay at `/server/{admin_path}/email` and manage embedded
 email templates there. Environment overrides take precedence over saved SMTP
 settings. Without a working relay, email is disabled and registration skips
 verification. Only `realtime` subscriber delivery is currently implemented;
-digest delivery, moderation, passive peer pull, and other planned mailing-list
-workflows remain incomplete. Inbound and queued outbound NNTP peer feeds use
-configured wildmat filters and per-group peering controls.
+digest delivery, article moderation, and other planned mailing-list workflows
+remain incomplete. Inbound and queued outbound NNTP peer feeds use configured
+wildmat filters and per-group peering controls. Peer `newgroup`, `rmgroup`, and
+`checkgroups` messages are held for explicit administrator review and recorded
+in the audit log.
 This build is not ready for production use as a public news server.
 
 ## Production deployment
