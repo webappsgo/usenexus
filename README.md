@@ -59,8 +59,9 @@ configure and test the relay at `/server/{admin_path}/email` and manage embedded
 email templates there. Environment overrides take precedence over saved SMTP
 settings. Without a working relay, email is disabled and registration skips
 verification. Only `realtime` subscriber delivery is currently implemented;
-digest delivery, moderation, peer feeds, and other planned mailing-list
-workflows remain incomplete.
+digest delivery, moderation, passive peer pull, and other planned mailing-list
+workflows remain incomplete. Inbound and queued outbound NNTP peer feeds use
+configured wildmat filters and per-group peering controls.
 This build is not ready for production use as a public news server.
 
 ## Production deployment
