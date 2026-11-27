@@ -5,7 +5,7 @@
 - [ ] Add signed, expiring one-click moderation links to moderator hold emails; record every decision in the audit log and notify rejected senders with the configured reason.
 - [ ] Implement sender trust rules for authenticated subscribers and configured allowlisted addresses, plus the emergency setting that holds every post regardless of trust.
 - [ ] Complete the `announcement` subscription mode so subscribers receive only moderator and administrator posts.
-- [ ] Add the email-command interface for `SUBSCRIBE`, `UNSUBSCRIBE`, `DIGEST`, and `HELP`, using the existing confirmation-token safeguards and never changing membership on an unconfirmed command.
+- [x] Add the email-command interface for `SUBSCRIBE`, `UNSUBSCRIBE`, `DIGEST`, and `HELP` at group-request, global command, and list+group addresses, using single-use confirmation tokens and each group's configured default delivery mode.
 - [ ] Support subscription-request comments and expose the comment to moderators during approval or rejection.
 
 ## P1 — Product features and baseline parity
