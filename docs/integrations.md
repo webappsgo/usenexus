@@ -7,8 +7,16 @@
 - Plain NNTP listens on port 119 by default and supports STARTTLS when TLS is
   enabled with a valid certificate. NNTPS on port 563 is also available under
   those TLS conditions.
-- Inbound SMTP receives messages addressed to `list+group@{server.fqdn}` and
-  injects them into matching public groups. It defaults to port 25 and tries
+- Inbound SMTP receives posts at `list+group@{server.fqdn}` and injects them
+  into matching public groups. Email commands are accepted at
+  `{group}-request@{server.fqdn}`, `commands@{server.fqdn}`, and
+  `list+commands@{server.fqdn}`; a recognized first-line command sent to
+  `list+group@{server.fqdn}` is also accepted. `SUBSCRIBE [group]` uses the
+  group's configured default delivery mode, `UNSUBSCRIBE [group]` removes the
+  subscription, `DIGEST [group]` selects digest delivery, and `HELP` lists the
+  command syntax. Group-specific addresses allow the group argument to be
+  omitted. Each command requires a single-use confirmation link sent to the
+  verified primary email of an active account. It defaults to port 25 and tries
   2525 then an OS-assigned port when the configured port cannot bind, unless
   `SMTP_IN_PORT` explicitly locks the port.
 - Outbound SMTP can deliver registration verification and password-reset
@@ -30,9 +38,9 @@
   links, duplicate Message-IDs do not enqueue a second copy, and failed sends
   retry with exponential backoff capped at 24 hours. The worker handles up to
   50 deliveries per 15-second pass. `nomail` keeps the subscription active for
-  NNTP reading while suppressing email. `announcement` preferences are stored,
-  but filtering delivery to moderator and administrator posts is not
-  implemented yet.
+  NNTP reading while suppressing email. `announcement` subscriptions are
+  stored; article delivery filtering to moderator and administrator posts is
+  still in progress.
 - The HTTP API supports JSON and a read-only GraphQL endpoint. The OpenAPI JSON
   document is at `/api/v1/server/swagger`; interactive Swagger UI is at
   `/server/docs/swagger`; GraphQL is at `/server/docs/graphql` and

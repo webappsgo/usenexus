@@ -51,9 +51,10 @@ connected peers, peer articles in/out, and queued peer deliveries.
   session revocation, user API tokens, and administrator-issued invitations.
 - Server-rendered subscription join and management pages, email confirmation,
   member preferences, and persistent retrying real-time article fanout.
-- Inbound SMTP list posting at `list+group@domain`, with bounded messages,
-  recipient and connection limits, optional STARTTLS, and optional TLS-only
-  SMTP AUTH. The listener tries ports 25, 2525, then an OS-assigned port unless
+- Inbound SMTP list posting at `list+group@domain`, plus confirmed email
+  commands at group request and global command addresses. The listener limits
+  message size, recipients, and connections and supports optional STARTTLS and
+  TLS-only SMTP AUTH. It tries ports 25, 2525, then an OS-assigned port unless
   `SMTP_IN_PORT` explicitly locks the port.
 - SQLite by default, with PostgreSQL support.
 - User and organization custom domains with TXT ownership checks, public-page

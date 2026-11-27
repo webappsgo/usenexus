@@ -44,8 +44,9 @@ Go version, operating system, architecture, server mode, and database driver.
 The group manager at `/server/{server.admin_path}/groups` lists all public and
 private groups and provides standard HTML forms to create, rename, update, and
 delete them. Mutations use the administrator session and CSRF token; no
-JavaScript is required. Group forms currently expose the implemented fields:
-name, description, visibility, posting policy, and peer-exchange setting.
+JavaScript is required. Group forms expose name, description, visibility,
+posting policy, peer-exchange setting, and the default delivery mode for new
+subscribers (`realtime`, `digest`, `nomail`, or `announcement`).
 Peer ingestion is accepted only from enabled inbound peers over TLS. Peer
 wildmat filters and each group's peer-exchange setting control which groups
 receive incoming articles and which matching articles enter the durable
