@@ -15,8 +15,10 @@ cutoff, and per-connection article/byte rate holds. Peer control messages are
 held for administrator review before group changes are applied. Posts to
 moderated groups are held in a CSRF-protected server-rendered moderator queue;
 approval publishes and fans out the article. Daily subscriber digests are
-queued and retried; weekly windows, threshold triggers, email-based moderation,
-and other planned mailing-list workflows remain incomplete.
+queued and retried, with weekly and count- or size-threshold windows available.
+Administrators can assign group moderators through the server-rendered Groups
+page. Email-based moderation, sender trust rules, emergency moderation, and
+other planned mailing-list workflows remain incomplete.
 Prometheus reports
 connected peers, peer articles in/out, and queued peer deliveries.
 
@@ -66,12 +68,12 @@ relay is configured under `server.notifications.email.smtp`. Administrators can
 configure and test the relay at `/server/{admin_path}/email` and manage embedded
 email templates there. Environment overrides take precedence over saved SMTP
 settings. Without a working relay, email is disabled and registration skips
-verification. `realtime` delivery and daily `multipart/digest` messages are
-implemented; weekly/threshold digest windows and the complete article
-moderation workflow remain incomplete. Inbound and queued outbound NNTP peer feeds use configured
-wildmat filters and per-group peering controls. Peer `newgroup`, `rmgroup`, and
-`checkgroups` messages are held for explicit administrator review and recorded
-in the audit log.
+verification. `realtime` delivery and daily, weekly, and threshold-triggered
+`multipart/digest` messages are implemented. Email-based review and the complete
+article moderation workflow remain incomplete. Inbound and queued outbound NNTP
+peer feeds use configured wildmat filters and per-group peering controls. Peer
+`newgroup`, `rmgroup`, and `checkgroups` messages are held for explicit
+administrator review and recorded in the audit log.
 This build is not ready for production use as a public news server.
 
 ## Production deployment
