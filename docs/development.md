@@ -1,0 +1,51 @@
+# Development
+
+## Requirements
+
+- Docker with the `casjaysdev/go:latest` image.
+- Make.
+
+Go is built and tested only in the project Go container:
+
+```sh
+make test
+make local
+```
+
+`make test` runs `go vet`, `govulncheck`, and `go test -cover`. The project
+implementation standard is `AI.md`, with project-specific overrides in
+`SPEC.md`. `IDEA.md` is the product behavior reference. For documentation
+changes, install `docs/requirements.txt` in a Python environment and build the
+site with `mkdocs build --strict` before submitting.
+
+The binary integration checks run the server in a temporary Docker container.
+Build binaries into an isolated directory and point the test runner at it:
+
+```sh
+mkdir -p "${TMPDIR:-/tmp}/webappsgo"
+GOSPOOL_BUILD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/webappsgo/gospool-XXXXXX")"
+make BINDIR="$GOSPOOL_BUILD_DIR" local
+BINDIR="$GOSPOOL_BUILD_DIR" tests/run_tests.sh
+make BINDIR="$GOSPOOL_BUILD_DIR" clean
+```
+
+The build and test scripts store runtime state under
+`${TMPDIR:-/tmp}/webappsgo/` and remove their
+container and temporary state when it exits.
+
+The Docker and Incus suites also verify operator-token protection on the debug
+routes: missing and wrong credentials return `401`, owner tokens return `403`,
+the `server.token` from the test container's `secrets.yml` authenticates, and
+query-string credentials are rejected. The deterministic `/debug/error500`
+route returns `500` after successful authentication. The token is not printed
+by the test scripts.
+
+## Layout
+
+- `src/config`: YAML configuration, defaults, and protected first-run secrets.
+- `src/paths`: platform and container paths.
+- `src/server`: HTTP routes, templates, auth, API, and GraphQL.
+- `src/server/store`: database schema and persistence.
+- `src/server/service`: article ingestion and cryptographic helpers.
+- `src/client`: companion HTTP API client.
+- `docker`: image and Compose definitions.
