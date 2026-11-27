@@ -45,6 +45,7 @@ maintainer_email: git-admin@casjaysdev.pro
 - Live Message-ID deduplication: server maintains a running history of every ingested `Message-ID`; inbound NNTP POST, inbound email inject, and all peer feed paths reject already-seen IDs before storing; prevents feed loops, duplicate delivery to subscribers, and duplicate articles in the archive; history is persistent across restarts
 - Mailing-list subscriber management: join, leave, digest vs. real-time, held messages
 - Mailman-style web interface: subscriber self-service (public routes) + full admin panel (at `/server/{admin_path}/`)
+- Project-specific admin section `/server/{admin_path}/groups`: server-rendered group lifecycle forms for creating, renaming, configuring, and deleting groups; requires the server-admin session and CSRF validation
 - Email-command interface for subscription management (`SUBSCRIBE`, `UNSUBSCRIBE`, `DIGEST`, `HELP`) with confirmation token flow
 - Moderation: post approval queue (web + email-based approve/reject), moderator promotion/demotion, rejection with reason; per-origin trust bypass — known subscribers posting via authenticated NNTP or from a whitelisted address skip the hold queue even on moderated groups; unknown/unauthenticated senders always held; emergency moderation flag forces all posts to queue regardless of trust
 - Cross-posting: article appears in all target groups, duplicate delivery suppressed per-subscriber
@@ -53,7 +54,7 @@ maintainer_email: git-admin@casjaysdev.pro
 - Usenet peering: active feed (IHAVE/TAKETHIS push, RFC 4644 streaming) + passive pull (NEWNEWS-based); per-peer group filter uses INN-compatible wildmat pattern syntax (e.g. `comp.*,!comp.binaries.*`) for fine-grained feed control
 - Control message handling: `newgroup`, `rmgroup`, and `checkgroups` control messages arriving via peer feeds are logged and held for admin review; never auto-applied regardless of source; PGP-signed control messages still require explicit admin approval before taking effect; admins can approve, reject, or ignore each held control message from the admin UI
 - Batched feed injection: `gospool inject` subcommand (part of the server binary) accepts RFC 4155 `rnews` batch files for UUCP/batched-feed operators; same Message-ID dedup and age-cutoff rules apply as live feeds
-- Group lifecycle: create/delete/rename via admin UI, CLI, and API; high/low water marks tracked for NNTP `LIST ACTIVE` compliance
+- Group lifecycle: create/delete/rename via `/server/{admin_path}/groups`, CLI, and API; high/low water marks tracked for NNTP `LIST ACTIVE` compliance
 - Per-group configuration: public/private, moderated/unmoderated, announcement-only, peering on/off, reply-to mode, message header/footer, retention days, posting policy, default delivery mode for new subscribers
 - Article expiry: per-group retention rules; scheduled expiry job purges expired articles from DB and FS
 - Cancel / Supersedes: handled on inbound from both NNTP and peer feeds; restricted to original sender or group moderator
