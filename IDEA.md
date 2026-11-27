@@ -224,6 +224,7 @@ All paths below are canonical routes under `/api/{api_version}`. Template-owned 
 | DELETE | `/groups/{group}/subscriptions` | Session or group moderator | Unsubscribe self or remove a member | Returns operation result without disclosing unrelated membership data |
 | GET | `/groups/{group}/moderation` | Assigned moderator or admin | List held articles | Pagination; returns pending article summaries |
 | POST | `/groups/{group}/moderation/{message_id}` | Assigned moderator or admin | Approve or reject a held article | Decision and optional reason; returns updated moderation state |
+| GET, POST | `/server/{admin_path}/groups/{group}/moderators` | Server admin session; POST requires CSRF | List, promote, or demote a group's moderators | POST accepts `username` and `action` (`grant` or `revoke`); grants require an active, verified user |
 | GET | `/peers` | Server admin | List configured peers | Pagination/status filters; returns peer summaries without secrets |
 | POST | `/peers` | Server admin | Add a peer | Peer connection and wildmat settings; returns peer summary |
 | GET | `/peers/{peer}` | Server admin | Read peer status | Returns configuration summary and connection status |

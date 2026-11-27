@@ -1,21 +1,22 @@
-# gospool implementation backlog
+# gospool remaining implementation work
 
-Dependency order: project skeleton → server core and persistence → user/admin web flows → NNTP and SMTP protocols → integrations and background services → client CLI → deployment and documentation parity.
+## P0 — Moderation and delivery behavior
 
-## P0 — Core application
+- [ ] Add signed, expiring one-click moderation links to moderator hold emails; record every decision in the audit log and notify rejected senders with the configured reason.
+- [ ] Implement sender trust rules for authenticated subscribers and configured allowlisted addresses, plus the emergency setting that holds every post regardless of trust.
+- [ ] Complete the `announcement` subscription mode so subscribers receive only moderator and administrator posts; retain `nomail` subscriptions without queueing email.
+- [ ] Add the email-command interface for `SUBSCRIBE`, `UNSUBSCRIBE`, `DIGEST`, and `HELP`, using the existing confirmation-token safeguards and never changing membership on an unconfirmed command.
+- [ ] Support subscription-request comments and expose the comment to moderators during approval or rejection.
 
-- [ ] Implement the Go server, configuration, persistence, security, health, API, and server-rendered pages required by AI.md PARTs 3–17, applying SPEC.md listener and database overrides.
-- [ ] Implement the NNTP/NNTPS, inbound/outbound SMTP, group, article, subscription, moderation, and peering behavior in IDEA.md and SPEC.md.
-- [ ] Implement all activated PART 34–36 account, organization, and custom-domain requirements.
+## P1 — Product features and baseline parity
 
-## P1 — Required project surfaces
+- [ ] Implement RFC 4155 `rnews` batch injection through the server binary with the same deduplication, age, and group-filter rules as live peer feeds.
+- [ ] Finish the required CLI operations in IDEA.md, including group lifecycle, imports, and article injection; expose server functionality instead of returning unsupported-command errors.
+- [ ] Complete server and email localization by moving visible strings to translation keys and verifying all six embedded locales across public pages, admin pages, errors, and notifications.
+- [ ] Complete the AI.md PART-by-PART final compliance review and implement each remaining mandatory baseline item, including the required server-page and configuration behavior.
+- [ ] Raise package and overall test coverage to the AI.md requirements while adding regression coverage for every remaining feature.
 
-- [ ] Implement scheduler, GeoIP, metrics, backup/restore, updater, service support, Tor/I2P, and localization requirements from AI.md PARTs 18–25 and 31–33.
-- [ ] Implement the required client CLI and its IDEA.md operations.
-- [ ] Add complete tests and testing scripts required by AI.md PART 29.
+## P2 — Documentation and release parity
 
-## P2 — Delivery and documentation
-
-- [ ] Add the Makefile, Docker images/compose variants, multi-provider CI/CD, dependency automation, security policy, and project governance files required by AI.md PARTs 26–28.
-- [ ] Add complete ReadTheDocs documentation and keep README, API/OpenAPI, CLI help, server pages, and docs synchronized with the shipped behavior.
-- [ ] Complete the AI.md FINAL compliance review and remove resolved task entries after their resolving commits.
+- [ ] Keep API/OpenAPI, IDEA route inventory, administration pages, README, installation, integrations, and ReadTheDocs content synchronized as features ship.
+- [ ] Run and resolve required Makefile test, lint, build, container, CI workflow, and documentation checks; then complete the prescribed commit and CI verification workflow.
