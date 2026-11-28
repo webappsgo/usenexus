@@ -24,9 +24,10 @@ exchange selected groups with other news servers.
 
 ## Current limitations
 
-Web review of held articles and daily, weekly, and threshold subscriber digests
-are available. Email-based moderation and its trust/notification workflows,
-and parts of the complete RFC 3977/4644 NNTP command set are not yet available.
+Web review of held articles, subscriber trust bypass, per-group non-member
+policies and sender overrides, emergency moderation, and daily, weekly, and
+threshold subscriber digests are available. Email-based moderation and parts
+of the complete RFC 3977/4644 NNTP command set are not yet available.
 See the [development guide](development.md) and [CLI guide](cli.md) for the
 implemented surface and its limits. The README also summarizes the current
 release state.

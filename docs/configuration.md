@@ -6,6 +6,16 @@ the earlier value; maps merge by key. Hidden files, backups, unsupported
 extensions, and symlinks that resolve outside `yaml.d/` are ignored. For
 example, maintenance settings belong in `yaml.d/maintenance.yml`:
 
+Boolean settings accept case-insensitive forms such as `true`/`false`,
+`yes`/`no`, `1`/`0`, `on`/`off`, and `enable`/`disable`. An invalid value in
+configuration or an environment variable logs a warning and keeps the
+configured default; an invalid boolean in a request returns a validation error.
+
+Webhook destinations must use HTTPS and resolve to public addresses by default.
+Self-hosted installations that intentionally target private networks can set
+`server.webhooks.allow_private_targets: true`; unspecified and multicast targets
+remain blocked.
+
 ```yaml
 server:
   restore:
@@ -120,6 +130,8 @@ server:
       from:
         name: ""
         email: ""
+  webhooks:
+    allow_private_targets: false
   scheduler:
     timezone: America/New_York
     catch_up_window: 1h
@@ -130,6 +142,7 @@ server:
       security_cleanup: {schedule: "0 3 * * *", enabled: true}
       keyserver_retry: {schedule: "@every 15m", enabled: true}
       peer_feed_retry: {schedule: "@every 1m", enabled: true, retry_on_fail: true, retry_delay: 1m}
+      webhook_delivery: {schedule: "@every 1m", enabled: true, retry_on_fail: true, retry_delay: 1m}
       digest_delivery: {schedule: "@every 15m", enabled: true, retry_on_fail: true, retry_delay: 15m}
       cve_update: {schedule: "0 5 * * *", enabled: true, retry_on_fail: true, retry_delay: 1h}
       update_check: {schedule: "0 6 * * *", enabled: true}
@@ -193,6 +206,7 @@ users:
     invite_expiration_days: 7
 auth:
   password_reset_ttl: 1h
+  partial_session_ttl: 5m
 database:
   driver: sqlite
 ```
@@ -227,7 +241,7 @@ The implemented configuration fields are:
 | `server.rate_limit.auth.*` | login `5/900`, reset `3/3600`, registration `5/3600`, upload `10/3600` | Additional limits for sensitive authentication and upload routes. |
 | `server.seo.feed.max_items` | `50` | Entries in public Atom/RSS feeds; range 1–200. |
 | `server.seo.feed.title` | empty | Channel title, defaulting to `GoSpool`. |
-| `server.admin_path` | `administration` | One safe path segment. |
+| `server.admin_path` | `administration` | Lowercase path segment of 2–32 letters, digits, or hyphens; reserved or conflicting values fall back to `administration` with a warning. |
 | `server.session.admin.cookie_name` / `.user.cookie_name` | `admin_session` / `user_session` | Names of the administrator and regular-user session cookies. |
 | `server.session.admin.max_age` / `.user.max_age` | `30d` / `7d` | Absolute session lifetime; accepts Go duration units and day notation. |
 | `server.session.admin.idle_timeout` / `.user.idle_timeout` | `24h` / `24h` | Session expires after this period without activity. |
@@ -295,6 +309,7 @@ The implemented configuration fields are:
 | `users.registration.blocked_domains` | `[]` | Domains rejected during public registration and admin invitations. |
 | `users.registration.invite_expiration_days` | `7` | Lifetime of admin-issued user invitations. |
 | `auth.password_reset_ttl` | `1h` | Lifetime of one-time password reset links. |
+| `auth.partial_session_ttl` | `5m` | Lifetime of the hashed, single-use continuation token while login awaits second-factor verification. |
 | `database.driver` | `sqlite` | SQLite or PostgreSQL (`pgx`). |
 | `database.dsn` | empty | `DATABASE_URL` overrides when this field is empty. |
 | `web.base_url` | empty | Public origin used when constructing absolute account verification and password-reset links. |

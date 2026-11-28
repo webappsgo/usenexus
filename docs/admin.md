@@ -47,8 +47,11 @@ The group manager at `/server/{server.admin_path}/groups` lists all public and
 private groups and provides standard HTML forms to create, rename, update, and
 delete them. Mutations use the administrator session and CSRF token; no
 JavaScript is required. Group forms expose name, description, visibility,
-posting policy, peer-exchange setting, and the default delivery mode for new
-subscribers (`realtime`, `digest`, `nomail`, or `announcement`).
+posting and non-member policies, peer-exchange setting, and the default
+delivery mode for new subscribers (`realtime`, `digest`, `nomail`, or
+`announcement`). Non-member policy supports `hold`, `reject`, `discard`, and
+`accept`, defaulting to `hold`. Address/glob sender overrides are checked in
+hold, accept, reject, discard order; emergency moderation always queues posts.
 Digest groups can deliver daily, weekly, or when either a configured article
 count or total message-size threshold is reached. Message sizes accept
 human-readable units such as `1MB`; leaving a threshold at zero disables it.
@@ -69,8 +72,9 @@ audit log. Posts to moderated groups are held at
 reject them through CSRF-protected forms. Approval publishes the article and
 starts subscriber fanout. Administrators can promote and demote active,
 verified users through the no-JavaScript forms on the Groups page or the
-versioned moderator-management API. Email-based review, rejection notifications,
-and per-origin trust rules are not available yet.
+versioned moderator-management API. Per-origin trust is applied after sender
+overrides, while emergency moderation holds every post. Email-based moderation
+review and rejection notifications remain unavailable.
 
 The scheduler page at `/server/{server.admin_path}/scheduler` lists registered
 tasks and their last and next run state. Select a task to view its recent run
@@ -108,8 +112,8 @@ stopped and are not available through the live UI/API yet. Service-management
 controls are not available yet.
 
 GeoIP country settings and operator-authored presets are managed at
-`/server/{server.admin_path}/security/geoip` and through the matching
-`/api/v1/server/{server.admin_path}/security/geoip` API. Applying a preset only
+`/server/{server.admin_path}/network/geoip` and through the matching
+`/api/v1/server/{server.admin_path}/network/geoip` API. Applying a preset only
 copies its country codes into the form; the operator reviews and saves the
 country policy separately. GeoIP settings and presets are persisted in
 `server.yml`.

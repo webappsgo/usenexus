@@ -5,7 +5,7 @@ GoSpool uses the ASN, country, and city MaxMind DB files published by
 downloaded on first start and refreshed by the built-in `geoip_update`
 scheduled task. Each asset is checked against its upstream SHA-256 file before
 it replaces the installed copy. The databases live under the data directory's
-`security/geoip` folder; they are not embedded in the binary.
+`network/geoip` folder; they are not embedded in the binary.
 
 GeoIP is a deny-only risk signal. It never authenticates a request or grants
 access. Country blocking runs after rate limiting and before route

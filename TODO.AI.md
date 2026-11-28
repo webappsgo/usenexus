@@ -8,6 +8,7 @@
 
 ## P1 — Product features and baseline parity
 
+- [ ] Clarify and implement the reported manual group home-page setting: the current group model/editor have no home-page field, while IDEA.md only defines the generated public info page; confirm the prior product decision before adding schema and UI behavior.
 - [ ] Finish the IDEA.md client commands for subscriber management, moderation, and peer configuration; expose the corresponding server operations instead of returning unsupported-command errors.
 - [ ] Complete i18n parity: serve embedded locales at `/locales/{lang}.json`, move server-page, API, and email strings to translation keys, render the selected language and RTL direction, and verify all six locales across the server and client.
 - [ ] Bring the shared CSS files and every page into AI.md's layered token/component system; remove the extra page stylesheet, add the required Stylelint checks to the Makefile gates, and verify responsive states in the browser.

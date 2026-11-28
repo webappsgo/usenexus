@@ -32,8 +32,9 @@ sign in, manage their profile and sessions, and create scoped API tokens.
 Email verification is enabled by default. When a working outbound SMTP relay
 is configured, registration verification and password-reset messages are sent
 through it. Without a working relay, email is disabled and registration skips
-verification. If NNTP posting authentication is disabled, posts are accepted
-only into public groups with open posting policy. NNTPS and
+verification. If NNTP posting authentication is disabled, posts to public
+groups follow each group's non-member posting policy, defaulting to moderation.
+NNTPS and
 STARTTLS start when `server.ssl.enabled` is true and a valid certificate is
 available. Inbound SMTP can use that certificate for STARTTLS and accepts
 `list+group@{server.fqdn}` recipients for public groups.
@@ -66,6 +67,7 @@ pulled with NEWNEWS and ARTICLE. Peer control messages require administrator
 review. Moderated posts are held for web review by a group moderator or server
 administrator. Digest emails use the `digest_delivery` scheduler task.
 Groups default to daily delivery and can select rolling weekly windows or
-article-count and human-readable size thresholds. Email-based
-moderation, trust bypass rules, and other planned moderation workflows are
-also not yet implemented.
+article-count and human-readable size thresholds. Group administrators can set
+non-member posting policies, sender-specific address/glob overrides, and an
+emergency moderation hold. Email-based one-click moderation is not available;
+moderators review held articles through the web queue.

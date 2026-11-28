@@ -2,16 +2,18 @@
 
 ## Current status
 
-The shared `src/common/i18n` package embeds six complete locale files and
+The shared `src/common/i18n` package embeds eight complete locale files and
 provides language normalization, translation lookup, formatting, plural rules,
 and validation. The client CLI and TUI use the locale package, and the
-server-preferences page lets visitors choose a language. Server-rendered page
-copy and notification emails have not yet been migrated to translation keys,
-so those surfaces remain English. New locale data belongs in the embedded
-locale directory and must be added to the shared language registry.
+server-preferences page lets visitors choose a language. Embedded catalogs are
+served from `/locales/{lang}.json`. Server-rendered page copy and notification
+emails have not yet been migrated to translation keys, so those surfaces remain
+English. New locale data belongs in the embedded locale directory and must be
+added to the shared language registry.
 
 The current supported locales are English (`en`), Spanish (`es`), French
-(`fr`), Arabic (`ar`), German (`de`), and Italian (`it`).
+(`fr`), Arabic (`ar`), German (`de`), Italian (`it`), Chinese (`zh`), and
+Japanese (`ja`).
 
 ## Translation contribution rules
 
@@ -67,8 +69,10 @@ must follow French usage; do not build sentences by concatenating fragments.
    categories, and optional translator credit.
 3. Add the language to the shared registry; the locale files and registry must
    represent exactly the same supported set.
-4. Run `make test` and rebuild every binary so the embedded locale is included.
-5. Update the language list and translator credits here and in the README.
+4. Add the locale to the default language set and CLI language selector through
+   the shared registry; all binaries embed the same catalogs.
+5. Run `make test` and rebuild every binary so the embedded locale is included.
+6. Update the language list and translator credits here and in the README.
 
 The runtime language-selection order is `?lang=`, the `lang` cookie,
 `Accept-Language`, then English. Unsupported languages fall back to English.

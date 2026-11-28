@@ -40,8 +40,10 @@ is available. `AUTHINFO USER/PASS` is accepted only on encrypted NNTP sessions
 and validates verified, unsuspended regular-user records. Regular users can
 register when `users.registration.mode` is `open`; verification is required
 only when outbound SMTP is available. Posting is authentication-required by
-default; if that requirement is disabled, posts are limited to public groups
-with open posting policy.
+default; if that requirement is disabled, posts to public groups follow the
+group's non-member policy, which defaults to moderation. A group can reject,
+silently discard, or accept non-member posts. Sender overrides require a
+verified authenticated identity before they can bypass moderation.
 
 For custom-domain HTTPS redirects behind a TLS-terminating proxy, forwarded
 HTTPS is accepted only when the immediate TCP peer is loopback, private,

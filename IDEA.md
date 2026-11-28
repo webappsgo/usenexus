@@ -47,7 +47,7 @@ maintainer_email: git-admin@casjaysdev.pro
 - Mailman-style web interface: subscriber self-service (public routes) + full admin panel (at `/server/{admin_path}/`)
 - Project-specific admin section `/server/{admin_path}/groups`: server-rendered group lifecycle forms for creating, renaming, configuring, and deleting groups; requires the server-admin session and CSRF validation
 - Email-command interface for subscription management (`SUBSCRIBE`, `UNSUBSCRIBE`, `DIGEST`, `HELP`) with confirmation token flow
-- Moderation: post approval queue (web + email-based approve/reject), moderator promotion/demotion, rejection with reason; per-origin trust bypass — known subscribers posting via authenticated NNTP or from a whitelisted address skip the hold queue even on moderated groups; unknown/unauthenticated senders always held; emergency moderation flag forces all posts to queue regardless of trust
+- Moderation: post approval queue (web + email-based approve/reject), moderator promotion/demotion, rejection with reason; per-origin trust bypass — known subscribers posting via authenticated NNTP or from a whitelisted address skip the hold queue even on moderated groups; other non-members follow the per-group posting policy (default `hold`), with explicit sender overrides; emergency moderation flag forces all posts to queue regardless of trust
 - Cross-posting: article appears in all target groups, duplicate delivery suppressed per-subscriber
 - Threading: `References` and `In-Reply-To` headers honoured and propagated from both inbound paths
 - NNTP operating mode: configurable at server level — `reader` (serve NNTP clients only, no peer feeds), `feeder` (peer feed exchange only, no direct client reading), `both` (default, all connections)
@@ -105,7 +105,7 @@ maintainer_email: git-admin@casjaysdev.pro
 - Per-list MIME type policy: configurable allowed/blocked MIME content types per group; e.g. block `application/*` on announcement lists, allow `text/plain` only; rejected messages bounced with reason
 - Moderator hold notification: when a message is held for moderation, an email is sent to all group moderators with a summary (From, Subject, date, short excerpt) and direct approve/reject links — no login required for one-click moderation via signed tokens
 - Rejection notification to sender: when a held post is rejected by a moderator, the original sender receives an email with the rejection reason; configurable per group (enabled by default)
-- Subscription request comment: when joining a moderated-membership group, subscriber can include a plain-text reason; moderator sees the comment when approving or rejecting the membership request
+- Subscription request comment: a public group can enable moderated membership (`membership_moderated`, default false); the subscriber can include an optional plain-text reason up to 500 characters. Email confirmation leaves the request pending until a group moderator or administrator approves or rejects it, and the reason is shown during review. Private groups remain invite-only and do not accept membership requests.
 - Non-member posting policy: per-group, four options — `hold` (send to moderation queue), `reject` (bounce with reason to sender), `discard` (silent drop, no notification), `accept` (non-members may post freely without moderation); default is `hold`
 - Per-sender non-member override lists: per-group address/glob lists that override the blanket non-member policy for specific senders — `hold_senders`, `accept_senders`, `reject_senders`, `discard_senders`; matched in that order; supports exact addresses and shell-style glob patterns (e.g. `*@trusted-org.example`)
 - Per-group header/content filter rules: ordered list of regex rules per group, each matching any header field (Subject, From, X-Mailer, body excerpt, etc.) with a configured action — `hold`, `reject`, or `discard`; rules evaluated before the non-member policy; allows blocking spam patterns, off-topic subjects, or abusive senders without banning them server-wide
@@ -220,6 +220,8 @@ All paths below are canonical routes under `/api/{api_version}`. Template-owned 
 | GET | `/articles/{message_id}` | Public for public groups; otherwise session | Fetch an article | Returns article headers and body metadata |
 | POST | `/groups/{group}/subscriptions` | Session | Subscribe to a group | Delivery mode and confirmation data; returns subscription state |
 | GET | `/groups/{group}/subscriptions` | Session or group moderator | List subscriptions or current membership | Returns caller membership; moderator scope returns paginated membership summaries |
+| GET | `/groups/{group}/subscriptions/requests` | Assigned group moderator or server admin | List confirmed pending membership requests for a public moderated-membership group | Pagination; returns request ID, requester username, request time, and optional plain-text comment; does not expose requester email |
+| POST | `/groups/{group}/subscriptions/requests/{subscription_id}` | Assigned group moderator or server admin | Approve or reject a confirmed pending membership request | JSON `decision` is `approve` or `reject`; returns the resulting request state; decisions are audited |
 | PATCH | `/groups/{group}/subscriptions` | Session | Change own delivery preferences | Delivery mode and tag preferences; returns updated membership |
 | DELETE | `/groups/{group}/subscriptions` | Session or group moderator | Unsubscribe self or remove a member | Returns operation result without disclosing unrelated membership data |
 | GET | `/groups/{group}/moderation` | Assigned moderator or admin | List held articles | Pagination; returns pending article summaries |
@@ -273,6 +275,7 @@ NNTP, NNTPS, SMTP, Tor, and I2P protocol surfaces are not HTTP API routes; their
 - `description`, `created_at`
 - `org_id` — optional FK to owning Organization; null = server-global group
 - `moderated` — bool; if true, unapproved posts held for moderator
+- `membership_moderated` — bool; default false; public-group subscription requests require moderator approval when enabled
 - `posting_policy` — `open` | `subscribers_only` | `moderated`
 - `reply_to` — override `Reply-To` header on outbound email (list address or original)
 - `peering_enabled` — bool

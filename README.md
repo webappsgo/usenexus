@@ -17,8 +17,11 @@ moderated groups are held in a CSRF-protected server-rendered moderator queue;
 approval publishes and fans out the article. Daily subscriber digests are
 queued and retried, with weekly and count- or size-threshold windows available.
 Administrators can assign group moderators through the server-rendered Groups
-page. Email-based moderation, sender trust rules, emergency moderation, and
-other planned mailing-list workflows remain incomplete.
+page. Non-member posting defaults to moderation and can be configured per group
+with sender address/glob overrides; confirmed subscribers and verified
+allowlisted senders can bypass the hold, while emergency moderation holds every
+post. Email-based one-click moderation and other mailing-list workflows remain
+incomplete.
 Prometheus reports
 connected peers, peer articles in/out, and queued peer deliveries.
 
@@ -60,9 +63,10 @@ connected peers, peer articles in/out, and queued peer deliveries.
 - User and organization custom domains with TXT ownership checks, public-page
   routing, Let's Encrypt HTTP-01/TLS-ALPN-01 certificates, and encrypted
   Cloudflare DNS-01 credentials for wildcard or firewalled domains.
-- Companion CLI for API root, health, public group/article reads, and scoped API
-  token management. Its responsive TUI provides a view for each current CLI
-  command.
+- Companion CLI for group and peer administration, subscriber management,
+  moderation, article operations, user and organization administration, audit
+  queries, and protected sign-in. See `docs/cli.md` for supported routes and
+  server-side API gaps.
 
 Outbound SMTP supports account verification and password reset when a working
 relay is configured under `server.notifications.email.smtp`. Administrators can
@@ -70,8 +74,8 @@ configure and test the relay at `/server/{admin_path}/email` and manage embedded
 email templates there. Environment overrides take precedence over saved SMTP
 settings. Without a working relay, email is disabled and registration skips
 verification. `realtime` delivery and daily, weekly, and threshold-triggered
-`multipart/digest` messages are implemented. Email-based review and the complete
-article moderation workflow remain incomplete. Inbound and queued outbound NNTP
+`multipart/digest` messages are implemented. Email-based review remains
+incomplete. Inbound and queued outbound NNTP
 peer feeds use configured wildmat filters and per-group peering controls. Peer
 `newgroup`, `rmgroup`, and `checkgroups` messages are held for explicit
 administrator review and recorded in the audit log.
@@ -110,12 +114,27 @@ setup token to stderr. Open `http://127.0.0.1:8080/server/auth/setup` (or the
 configured HTTP address) to create the initial administrator. The token
 digest is removed after setup succeeds.
 
-The CLI is built as `binaries/gospool-cli` and supports `api`, `status`, public
-group listing and detail, administrator group lifecycle operations, article
-reads, token management, and an interactive TUI when run without arguments in
-a terminal. Group creation, updates, and deletion require an administrator
-bearer token; the configured operator token has administrator access. It can
-also read private groups. For example:
+The CLI is built as `binaries/gospool-cli`. Running it without arguments
+auto-selects the native GUI when available or the TUI in a terminal. An
+optional `make build-gui` target builds a separate desktop GUI artifact for
+Linux, macOS, and Windows. Its `display.mode` configuration accepts `auto`,
+`gui`, or `tui`. The default CLI remains static and does not include GUI
+libraries. The TUI and GUI include the currently supported actions for groups,
+articles, tokens, peers, subscriber add/invite/CSV import, moderation, users,
+organizations, audit records, webhook endpoints, and delivery history. Webhook
+events are signed and queued durably with bounded retry history. Peer-state and
+TLS-expiry webhook event producers are not yet connected. TUI revoked-session
+re-login, cluster health refresh and promotion, and CLI self-update remain
+incomplete. INN/Mailman/mbox import jobs and configuration reload remain
+incomplete. See
+[CLI documentation](docs/cli.md) for the command tree and exact coverage gaps.
+The client supports English (`en`), Spanish (`es`), French (`fr`), Arabic
+(`ar`), German (`de`), Italian (`it`), Chinese (`zh`), and Japanese (`ja`);
+all eight catalogs are embedded in the binaries.
+Group creation, updates, deletion, peer
+management, subscriber administration, moderation, and user administration
+require an administrator or appropriately assigned group moderator credential.
+For example:
 
 ```sh
 ./binaries/gospool-cli --server http://127.0.0.1:8080 groups

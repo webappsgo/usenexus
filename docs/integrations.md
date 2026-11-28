@@ -60,9 +60,10 @@ STARTTLS or over NNTPS. It checks verified, unsuspended regular-user credentials
 Regular users can register (when mode is `open`), sign in, and manage their
 profile, password, sessions, and API tokens. Unauthenticated `POST` receives
 `480 authentication required` by default. With posting authentication disabled,
-posts are accepted only for public groups with `open` posting policy; posts to
-moderated groups are held for review, while closed groups reject direct NNTP
-posts. The implemented command set includes
+non-member posts follow each public group's policy, which defaults to `hold`;
+groups can hold, reject, silently discard, or accept them. Authenticated
+confirmed subscribers and verified allowlisted sender addresses can bypass the
+ordinary hold, while emergency moderation always queues posts. The implemented command set includes
 IHAVE, STREAMING, CHECK, TAKETHIS, NEWNEWS, NEWGROUPS, XPAT, and LIST variants.
 Peer configuration is available in the server-rendered `/server/{admin_path}/peers`
 page and authenticated `/api/v1/peers` endpoints. Authenticated TLS peers can
@@ -77,8 +78,7 @@ required before group changes are applied. Moderated articles can be reviewed
 through the server-rendered `/groups/{group}/queue` page by a group moderator or
 server administrator. Server administrators can promote or demote active,
 verified users through the Groups page and moderator-management API. Email-based
-review and the moderator trust and notification workflows are not implemented
-yet. Prometheus exports connected peer counts,
+review and rejection notifications are not implemented yet. Prometheus exports connected peer counts,
 inbound/outbound article counters, and outbound queue depth. If `nntp.auth_required_for_read` is enabled,
 authenticated content reads require STARTTLS or NNTPS; plaintext NNTP cannot
 authenticate.

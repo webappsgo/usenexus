@@ -57,7 +57,7 @@ The `.txt` suffix applies to versioned API routes.
 | `GET` | `/api/v1` | Public groups anonymously; includes private groups for signed-in users or administrators | API name, version, OpenAPI document path, and the structured data rendered on the homepage. |
 | `GET` | `/api/v1/server/about` | Public | Structured project description and public feature information. |
 | `GET` | `/api/v1/server/help` | Public | Structured help sections for the web archive, API, NNTP, accounts, and administration. |
-| `GET` | `/api/v1/server/auth/login` | Public | Login form descriptor for API clients; `POST` on the same path authenticates a regular user. |
+| `GET` | `/api/v1/server/auth/login` | Public | Login form descriptor for API clients; `POST` on the same path authenticates administrators and regular users. |
 | `GET` | `/api/v1/server/auth/register` | Public while registration is open | Registration form descriptor; unavailable when user registration is disabled or private. |
 | `GET` | `/api/v1/server/healthz` | Public | Public-safe project, build, runtime, feature, component-check, and aggregate request-statistics health response. Returns 503 only when a critical database or disk check is unhealthy. |
 | `GET` | `/api/healthz` | Public | Unversioned alias of the versioned health API. |
@@ -67,16 +67,54 @@ The `.txt` suffix applies to versioned API routes.
 | `GET` | `/api/v1/groups/{group}` | Public for public groups; signed-in user or administrator session/bearer token for private groups | Returns group settings and article watermarks. |
 | `GET` | `/api/v1/groups/{group}/articles` | Public for public groups; signed-in user or administrator session/bearer token for private groups | Returns up to 100 recent article summaries. |
 | `GET`, `POST`, `PATCH`, `DELETE` | `/api/v1/groups/{group}/subscriptions` | Signed-in user; group moderator for roster/removal actions | Reads own membership, requests a double-opt-in public-group subscription, updates confirmed delivery preferences, or unsubscribes/removes a member. Private-group membership is invitation-only. POST returns `202` while confirmation is pending. |
+| `GET` | `/api/v1/groups/{group}/moderation` | Signed-in group moderator or server administrator | Lists pending article summaries. |
+| `POST` | `/api/v1/groups/{group}/moderation/{message_id}` | Signed-in group moderator or server administrator | Approves or rejects a held article with an optional reason. |
+| `GET`, `POST`, `PATCH`, `DELETE` | `/api/v1/groups/{group}/subscribers` | Signed-in group moderator or server administrator | Lists subscribers, adds an active verified user, changes delivery mode, or removes a subscriber. |
+| `POST` | `/api/v1/groups/{group}/subscribers/import` | Signed-in group moderator or server administrator | Imports up to 1,000 CSV rows (`user_id,delivery_mode`, maximum 1 MiB); `?dry_run=true` validates without writing. |
+| `POST` | `/api/v1/server/{admin_path}/orgs/invites` | Administrator session + CSRF | Creates a one-time organization creation code. |
 | `GET`, `POST` | `/api/v1/server/{admin_path}/groups/{group}/moderators` | Server administrator session; POST requires CSRF verification | Lists assigned group moderators or grants/revokes a moderator role with `{"username":"name","action":"grant|revoke"}`. Grants require an active, verified user. |
+| `GET` | `/api/v1/server/{admin_path}/{admin_username}/profile/security` | Administrator session or bearer token | Reads TOTP status, registered passkey names and timestamps, and remaining recovery-key count. |
+| `POST` | `/api/v1/server/{admin_path}/{admin_username}/profile/security/totp/setup` | Administrator session + CSRF, or write-capable admin bearer token | Confirms the current password and returns the setup secret and QR payload. |
+| `POST` | `/api/v1/server/{admin_path}/{admin_username}/profile/security/totp/enable` | Administrator session + CSRF, or write-capable admin bearer token | Verifies the authenticator code and returns recovery keys once, pending acknowledgement. |
+| `POST` | `/api/v1/server/{admin_path}/{admin_username}/profile/security/recovery-keys/ack` | Administrator session + CSRF, or write-capable admin bearer token | Acknowledges saved recovery keys and completes TOTP or passkey activation, or key regeneration. |
+| `POST` | `/api/v1/server/{admin_path}/{admin_username}/profile/security/totp/disable` | Administrator session + CSRF, or write-capable admin bearer token | Requires the current password and authenticator code or recovery key. |
+| `POST` | `/api/v1/server/{admin_path}/{admin_username}/profile/security/totp/recovery-keys` | Administrator session + CSRF, or write-capable admin bearer token | Requires the current password and authenticator code; returns replacement recovery keys once. |
+| `POST` | `/api/v1/server/{admin_path}/{admin_username}/profile/security/passkey/setup` | Administrator session + CSRF, or write-capable admin bearer token | Confirms the current password and returns WebAuthn creation options. |
+| `POST` | `/api/v1/server/{admin_path}/{admin_username}/profile/security/passkey/register` | Administrator session + CSRF, or write-capable admin bearer token | Verifies the passkey attestation and returns recovery keys once, pending acknowledgement. |
+| `PATCH`, `DELETE` | `/api/v1/server/{admin_path}/{admin_username}/profile/security/passkey/{id}` | Administrator session + CSRF, or write-capable admin bearer token | Renames or revokes one passkey. |
+| `POST` | `/api/v1/server/auth/passkey/challenge` | Public | Returns WebAuthn authentication options. |
+| `POST` | `/api/v1/server/auth/passkey/verify` | Public | Verifies an authentication response and creates an administrator or regular-user session according to the credential owner. |
+| `GET` | `/api/v1/users/security` | User session or bearer token | Reads the current user's TOTP, passkey, recovery-key, and session status. |
+| `POST` | `/api/v1/users/security/password` | User session + CSRF, or write-capable user bearer token | Changes the password after current-password and confirmation checks. |
+| `GET` | `/api/v1/users/security/sessions` | User session or bearer token | Lists the current user's active sessions. |
+| `DELETE` | `/api/v1/users/security/sessions/{session_id}` | User session or bearer token | Revokes one of the current user's sessions. |
+| `GET` | `/api/v1/users/security/2fa` | User session or bearer token | Reads current-user TOTP status. |
+| `POST` | `/api/v1/users/security/2fa/enable` | User session or bearer token | Verifies TOTP and returns recovery keys pending acknowledgement. |
+| `POST` | `/api/v1/users/security/2fa/disable` | User session or bearer token | Disables TOTP after password and one-time proof. |
+| `GET` | `/api/v1/users/security/recovery` | User session or bearer token | Reads recovery-key status. |
+| `POST` | `/api/v1/users/security/recovery/regenerate` | User session or bearer token | Rotates recovery keys and requires acknowledgement. |
+| `POST` | `/api/v1/users/security/recovery-keys/ack` | User session or bearer token | Acknowledges recovery keys and activates pending security credentials. |
+| `GET`, `POST` | `/api/v1/users/security/passkeys` | User session or bearer token | Lists passkeys or starts setup/registration using the `stage` field. |
+| `DELETE` | `/api/v1/users/security/passkeys/{passkey_id}` | User session or bearer token | Revokes a passkey owned by the current user. |
+| `GET`, `POST` | `/api/v1/server/client-admin/users` | Administrator session or bearer token; POST requires CSRF or write access | Lists users or creates a single-use user invitation. |
+| `PATCH` | `/api/v1/server/client-admin/users/{user_id}` | Administrator session + CSRF, or write-capable admin bearer token | Suspends or unsuspends a user. |
+| `GET` | `/api/v1/articles/search` | Public; returns public-group articles only | Searches by group, sender, subject, and date range. |
+| `POST` | `/api/v1/articles/{message_id}/cancel` | Administrator session + CSRF, or write-capable admin bearer token | Cancels an active article. |
+| `POST` | `/api/v1/groups/{group}/senders/{action}` | Administrator or assigned group moderator; mutations require CSRF or write access | Holds or unholds a sender for one group. |
+| `GET` | `/api/v1/audit-logs` | Administrator session or bearer token | Searches audit events with the supported filters. |
+| `GET` | `/api/v1/audit-logs/export` | Administrator session or bearer token | Exports matching audit events as CSV or JSON. |
+| `GET` | `/api/v1/server/status` | Administrator session or bearer token | Reads operational health status for the client. |
 | `GET` | `/api/v1/articles/{messageID}` | Public for public articles; signed-in user or administrator session for private articles | Returns article metadata; the body is not included. |
 | `POST` | `/api/v1/groups` | Administrator session + CSRF, or `adm_` bearer token with write access | Creates a group. |
-| `PATCH` | `/api/v1/groups/{group}` | Administrator session + CSRF, or `adm_` bearer token with write access | Updates group name, description, visibility, posting policy, peer-exchange setting, and default delivery mode. |
+| `PATCH` | `/api/v1/groups/{group}` | Administrator session + CSRF, or `adm_` bearer token with write access | Updates group name, description, visibility, posting and non-member policies, emergency moderation, sender overrides, peer-exchange setting, and default delivery mode. |
 | `DELETE` | `/api/v1/groups/{group}` | Administrator session + CSRF, or `adm_` bearer token with write access | Deletes a group and its subscriptions, queued deliveries, article links, and moderation queue entries. Archived article bodies remain available only through any other groups that reference them. |
 | `GET`, `POST` | `/api/v1/peers` | `adm_` Bearer token; POST requires a write-capable token | Lists configured NNTP peers without credentials or adds a peer with encrypted authentication data. |
 | `GET`, `PATCH`, `DELETE` | `/api/v1/peers/{peer}` | `adm_` Bearer token; mutations require a write-capable token | Reads, updates, or removes a configured peer. |
 | `POST` | `/api/v1/peers/{peer}/test` | `adm_` Bearer token with write scope | Performs a bounded NNTP greeting, optional TLS/authentication, and capabilities handshake. |
+| `GET`, `POST` | `/api/v1/webhooks` | Administrator session or bearer token; POST requires CSRF or write access | Lists webhook endpoints without secrets or creates one with selected events and a signing secret. |
+| `GET`, `PATCH`, `DELETE` | `/api/v1/webhooks/{webhook}` | Administrator session or bearer token; mutations require CSRF or write access | Reads status and delivery history, updates or enables an endpoint, or removes it. |
 | `GET`, `PATCH` | `/api/v1/server/{admin_path}/security/ratelimit` | `adm_` Bearer token; PATCH requires a write-capable token | Reads or updates persisted per-client HTTP rate limits. |
-| `GET`, `PUT` | `/api/v1/server/{admin_path}/security/geoip` | Administrator session; PUT requires CSRF | Reads or saves GeoIP country settings and operator-authored presets. |
+| `GET`, `PUT` | `/api/v1/server/{admin_path}/network/geoip` | Administrator session; PUT requires CSRF | Reads or saves GeoIP country settings and operator-authored presets. |
 | `GET` | `/api/v1/server/{admin_path}/scheduler` | Administrator session | Lists persisted scheduler tasks. |
 | `GET` | `/api/v1/server/{admin_path}/scheduler/{id}` | Administrator session | Reads one task and its latest 100 recorded runs. |
 | `PATCH` | `/api/v1/server/{admin_path}/scheduler/{id}` | Administrator session + CSRF | Updates a task schedule and/or enabled state. Required tasks cannot be disabled. |
@@ -86,7 +124,9 @@ The `.txt` suffix applies to versioned API routes.
 | `GET` | `/api/v1/server/{admin_path}/scheduler/{id}/history` | Administrator session | Returns the latest 100 recorded runs for a task. |
 | `GET` | `/api/v1/server/swagger` | Public | Returns the current OpenAPI JSON document. |
 | `GET`, `POST` | `/api/v1/server/graphql` | Public | Read-only GraphQL endpoint. `GET` accepts `query`, optional `variables` JSON, and optional `operationName`; `POST` accepts a JSON request. |
-| `POST` | `/api/v1/server/auth/login` | Public | Authenticates a verified, active regular user and returns a short-lived bearer session. |
+| `POST` | `/api/v1/server/auth/login` | Public | Authenticates an administrator or verified, active regular user; returns a bearer token or a partial-session challenge when second-factor verification is required. |
+| `POST` | `/api/v1/server/auth/2fa` | Partial-session | Completes a TOTP or passkey challenge and returns the account's bearer token. |
+| `POST` | `/api/v1/server/auth/recovery/use` | Partial-session | Completes login with a one-time recovery key and returns the bearer token and remaining-key count. |
 | `GET` | `/api/v1/users/tokens` | Regular-user bearer token | Lists the caller’s tokens with secrets redacted. |
 | `POST` | `/api/v1/users/tokens` | Regular-user bearer token with `read-write` or `global` scope | Creates a token; the secret is returned once. |
 | `DELETE` | `/api/v1/users/tokens/{id}` | Regular-user bearer token with `read-write` or `global` scope | Revokes one of the caller’s tokens. |
@@ -174,22 +214,26 @@ Group creation accepts JSON like:
   "description": "Example group",
   "visibility": "public",
   "posting_policy": "open",
+  "non_member_policy": "hold",
   "peering_enabled": true,
   "default_delivery_mode": "realtime"
 }
 ```
 
 The server validates group names, description length, visibility (`public` or
-`private`), posting policy (`open`, `subscribers_only`, or `moderated`), and
-default delivery mode (`realtime`, `digest`, `nomail`, or `announcement`).
+`private`), posting policy (`open`, `subscribers_only`, or `moderated`),
+non-member policy (`hold`, `reject`, `discard`, or `accept`; defaults to
+`hold`), sender address/glob overrides, emergency moderation, and default
+delivery mode (`realtime`, `digest`, `nomail`, or `announcement`).
 Browser requests use the administrator's `admin_session` cookie and a CSRF
 token in the `X-CSRF-Token` header. API clients may use an `adm_` bearer token;
 `read` tokens cannot create, update, or delete groups. The configured operator
 token also has administrator access.
 
 Group updates accept any non-empty subset of `name`, `description`,
-`visibility`, `posting_policy`, `peering_enabled`, and
-`default_delivery_mode`. Supplying a new `name` renames the group while
+`visibility`, `posting_policy`, `non_member_policy`, `emergency_moderation`,
+`hold_senders`, `accept_senders`, `reject_senders`, `discard_senders`,
+`peering_enabled`, and `default_delivery_mode`. Supplying a new `name` renames the group while
 preserving its article and subscription relationships.
 The peer-exchange setting controls inbound peer ingestion and outbound queueing.
 For example:
@@ -211,11 +255,12 @@ native GET form works without JavaScript; JavaScript enhances it with a POST
 request and an inline result view.
 
 The GraphQL schema currently exposes only public `groups` and
-`articles(group: String!)` queries. For example:
+`articles(group: String!)` queries. Group results include the posting and
+non-member posting policies. For example:
 
 ```graphql
 {
-  groups { name description articleHigh articleLow }
+  groups { name description postingPolicy nonMemberPolicy articleHigh articleLow }
   articles(group: "comp.example") { messageId subject from date number }
 }
 ```
